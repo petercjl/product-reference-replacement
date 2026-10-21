@@ -70,14 +70,25 @@
     },
     {
       "id": "local.assets",
-      "purpose": "确定性16:9标注资产图与来源记录",
+      "purpose": "规划独立图片、逐格版本和固定16:9合成",
       "required": true,
       "required_features": [
         "exif-crop",
         "ratio-preserving",
         "labelled-board",
         "source-hashes",
-        "freeze-approved"
+        "freeze-approved",
+        "category-evidence-templates",
+        "overall-and-scale",
+        "protected-source-regions",
+        "dense-fixed-canvas",
+        "photo-coverage-metrics",
+        "preview-visual-gate",
+        "fixed-panel-plan",
+        "sequential-panel-generation",
+        "panel-revisions",
+        "single-panel-recompose",
+        "n-originals-and-board"
       ],
       "input_fields": [
         "request"
@@ -112,7 +123,9 @@
         "single-request",
         "four-round-limit",
         "same-task-recovery",
-        "progress"
+        "progress",
+        "bound-blueprint",
+        "five-check-review"
       ],
       "input_fields": [
         "request"
@@ -138,8 +151,8 @@
     },
     {
       "id": "media.generate",
-      "purpose": "指定模型的两图单张生成",
-      "required": false,
+      "purpose": "A逐格单张生成、B两图单张替换",
+      "required": true,
       "required_features": [
         "ordered-references",
         "single-output",
@@ -204,11 +217,21 @@
     }
   ],
   "conditional_dependencies": {
-    "media.generate": "Mode B2 only",
+    "media.generate": "Mode A2 and B2; local planning/rendering is independent",
     "long.images": "Mode A1 long images only"
   },
   "host_resolution": {
     "fallback_adapter": "generic",
     "custom_destination": "Caller resolves its own Skill directory and supplies --target-directory."
+  },
+  "image_generation_route": {
+    "package": "@petercjl/sealseek-media-cli",
+    "command": "sealseek-media",
+    "skill": "sealseek-media",
+    "model": "nano-banana-pro",
+    "exclusive": true,
+    "native_image_generation_allowed": false,
+    "direct_api_fallback_allowed": false,
+    "dependency_failure": "Preserve task ID and report CAPABILITY_UNAVAILABLE or FEATURE_UNSUPPORTED; do not switch routes."
   }
 }

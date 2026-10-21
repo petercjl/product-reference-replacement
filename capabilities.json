@@ -1,5 +1,113 @@
 {
   "commandContracts": {
+    "board plan": {
+      "options": {
+        "--plan": {
+          "type": "string",
+          "required": true
+        },
+        "--output-directory": {
+          "type": "string",
+          "required": true
+        },
+        "--json": {
+          "type": "boolean"
+        }
+      },
+      "sideEffects": "local-write"
+    },
+    "board status": {
+      "options": {
+        "--project": {
+          "type": "string",
+          "required": true
+        },
+        "--json": {
+          "type": "boolean"
+        }
+      },
+      "sideEffects": "none"
+    },
+    "board compose": {
+      "options": {
+        "--project": {
+          "type": "string",
+          "required": true
+        },
+        "--output-directory": {
+          "type": "string",
+          "required": true
+        },
+        "--json": {
+          "type": "boolean"
+        }
+      },
+      "sideEffects": "local-write"
+    },
+    "panel prepare": {
+      "options": {
+        "--project": {
+          "type": "string",
+          "required": true
+        },
+        "--panel-id": {
+          "type": "string",
+          "required": true
+        },
+        "--prompt-file": {
+          "type": "string",
+          "required": true
+        },
+        "--reason": {
+          "type": "string",
+          "required": false
+        },
+        "--json": {
+          "type": "boolean"
+        }
+      },
+      "sideEffects": "local-write"
+    },
+    "panel attach": {
+      "options": {
+        "--project": {
+          "type": "string",
+          "required": true
+        },
+        "--panel-id": {
+          "type": "string",
+          "required": true
+        },
+        "--task-json": {
+          "type": "string",
+          "required": true
+        },
+        "--json": {
+          "type": "boolean"
+        }
+      },
+      "sideEffects": "local-write"
+    },
+    "panel review": {
+      "options": {
+        "--project": {
+          "type": "string",
+          "required": true
+        },
+        "--panel-id": {
+          "type": "string",
+          "required": true
+        },
+        "--review": {
+          "type": "string",
+          "required": true
+        },
+        "--json": {
+          "type": "boolean"
+        }
+      },
+      "sideEffects": "local-write"
+    },
     "board render": {
       "options": {
         "--plan": {
@@ -15,6 +123,22 @@
         }
       },
       "sideEffects": "local-write"
+    },
+    "board check": {
+      "options": {
+        "--board-directory": {
+          "type": "string",
+          "required": true
+        },
+        "--review": {
+          "type": "string",
+          "required": false
+        },
+        "--json": {
+          "type": "boolean"
+        }
+      },
+      "sideEffects": "none"
     },
     "asset freeze": {
       "options": {
@@ -100,6 +224,30 @@
       },
       "sideEffects": "local-write"
     },
+    "blueprint record": {
+      "options": {
+        "--job": {
+          "type": "string",
+          "required": true
+        },
+        "--image-id": {
+          "type": "string",
+          "required": true
+        },
+        "--analysis": {
+          "type": "string",
+          "required": true
+        },
+        "--record": {
+          "type": "string",
+          "required": true
+        },
+        "--json": {
+          "type": "boolean"
+        }
+      },
+      "sideEffects": "local-write"
+    },
     "round prepare": {
       "options": {
         "--job": {
@@ -113,6 +261,10 @@
         "--prompt-file": {
           "type": "string",
           "required": true
+        },
+        "--blueprint": {
+          "type": "string",
+          "required": false
         },
         "--json": {
           "type": "boolean"
@@ -308,5 +460,15 @@
     "sealseek_macos": "implemented; full host flow untested",
     "windows": "implemented; CI verification required"
   },
-  "boundary": "Application Skill owns visual choices and acceptance; package executes local deterministic work. Generation uses dynamically resolved sealseek-media."
+  "boundary": "Application Skill owns visual choices and acceptance; package executes local deterministic work. Generation uses dynamically resolved sealseek-media.",
+  "image_generation_route": {
+    "package": "@petercjl/sealseek-media-cli",
+    "command": "sealseek-media",
+    "skill": "sealseek-media",
+    "model": "nano-banana-pro",
+    "exclusive": true,
+    "native_image_generation_allowed": false,
+    "direct_api_fallback_allowed": false,
+    "dependency_failure": "Preserve task ID and report CAPABILITY_UNAVAILABLE or FEATURE_UNSUPPORTED; do not switch routes."
+  }
 }
