@@ -14,7 +14,7 @@ try {
  const root=path.join(prefix,'node_modules','@petercjl','product-reference-replacement'),cli=path.join(root,'bin/product-reference-replacement.mjs');
  const call=(...args)=>JSON.parse(run(process.execPath,[cli,...args]));
  assert.equal(call('version').version,'0.1.0');assert.equal(call('doctor').local_ready,true);
- const src=call('skill','source').source;assert.equal(src,await fs.realpath(path.join(root,'skills/product-reference-replacement')));
+ const src=call('skill','source').source;assert.equal(await fs.realpath(src),await fs.realpath(path.join(root,'skills/product-reference-replacement')));
  const target=path.join(dir,'宿主技能');assert.equal(call('skill','install','--agent','custom-host','--target-directory',target,'--mode','copy').managed,true);assert.equal(call('skill','status','--agent','custom-host','--target-directory',target).up_to_date,true);
  const require=createRequire(path.join(root,'package.json')),sharp=require('sharp');const source=path.join(dir,'产品原图.png');await sharp({create:{width:400,height:400,channels:3,background:'#aacb44'}}).png().toFile(source);
  const plan=path.join(dir,'plan.json');await fs.writeFile(plan,JSON.stringify({product_id:'smoke',variant:'green',width:640,height:360,panels:[{id:'a',label:'全貌',role:'overall',source,box:{x:0,y:0,width:320,height:360}},{id:'b',label:'局部',role:'detail',source,crop:{left:100,top:100,width:100,height:100},box:{x:320,y:0,width:320,height:360}}]}),{flag:'wx'});
