@@ -2,7 +2,6 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import {spawnSync} from 'node:child_process';
-import {createRequire} from 'node:module';
 import assert from 'node:assert/strict';
 const dir=await fs.mkdtemp(path.join(os.tmpdir(),'product-packed-'));
 const env={...process.env,PRODUCT_REFERENCE_REPLACEMENT_UPDATE_CHECK:'0',npm_config_dry_run:'false',npm_config_json:'false'};
@@ -16,7 +15,7 @@ try {
  assert.equal(call('version').version,'0.1.0');assert.equal(call('doctor').local_ready,true);
  const src=call('skill','source').source;assert.equal(await fs.realpath(src),await fs.realpath(path.join(root,'skills/product-reference-replacement')));
  const target=path.join(dir,'宿主技能');assert.equal(call('skill','install','--agent','custom-host','--target-directory',target,'--mode','copy').managed,true);assert.equal(call('skill','status','--agent','custom-host','--target-directory',target).up_to_date,true);
- const require=createRequire(path.join(root,'package.json')),sharp=require('sharp');const source=path.join(dir,'产品原图.png');await sharp({create:{width:400,height:400,channels:3,background:'#aacb44'}}).png().toFile(source);
+ const source=path.join(dir,'产品原图.png');run(process.execPath,['--input-type=module','-e',"import {createRequire} from 'node:module'; const require=createRequire(process.argv[1]); const sharp=require('sharp'); await sharp({create:{width:400,height:400,channels:3,background:'#aacb44'}}).png().toFile(process.argv[2]);",path.join(root,'package.json'),source]);
  const plan=path.join(dir,'plan.json');await fs.writeFile(plan,JSON.stringify({product_id:'smoke',variant:'green',width:640,height:360,panels:[{id:'a',label:'全貌',role:'overall',source,box:{x:0,y:0,width:320,height:360}},{id:'b',label:'局部',role:'detail',source,crop:{left:100,top:100,width:100,height:100},box:{x:320,y:0,width:320,height:360}}]}),{flag:'wx'});
  const board=call('board','render','--plan',plan,'--output-directory',path.join(dir,'board'));assert.equal(board.status,'draft');assert.equal(board.board.width/board.board.height,16/9);assert.ok(board.board.bytes>1000);assert.equal(board.update_check.status,'disabled');
  console.log(JSON.stringify({ok:true,packed_bytes:pack.size,files:pack.files.length,installed_version:'0.1.0',business_smoke:'real deterministic board',managed_install:'pass'}));
