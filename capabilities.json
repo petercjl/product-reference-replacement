@@ -1,0 +1,312 @@
+{
+  "commandContracts": {
+    "board render": {
+      "options": {
+        "--plan": {
+          "type": "string",
+          "required": true
+        },
+        "--output-directory": {
+          "type": "string",
+          "required": true
+        },
+        "--json": {
+          "type": "boolean"
+        }
+      },
+      "sideEffects": "local-write"
+    },
+    "asset freeze": {
+      "options": {
+        "--image": {
+          "type": "string",
+          "required": true
+        },
+        "--record": {
+          "type": "string",
+          "required": true
+        },
+        "--review": {
+          "type": "string",
+          "required": true
+        },
+        "--json": {
+          "type": "boolean"
+        }
+      },
+      "sideEffects": "local-write"
+    },
+    "asset import": {
+      "options": {
+        "--image": {
+          "type": "string",
+          "required": true
+        },
+        "--record": {
+          "type": "string",
+          "required": true
+        },
+        "--review": {
+          "type": "string",
+          "required": true
+        },
+        "--json": {
+          "type": "boolean"
+        }
+      },
+      "sideEffects": "local-write"
+    },
+    "job create": {
+      "options": {
+        "--plan": {
+          "type": "string",
+          "required": true
+        },
+        "--output-directory": {
+          "type": "string",
+          "required": true
+        },
+        "--json": {
+          "type": "boolean"
+        }
+      },
+      "sideEffects": "local-write"
+    },
+    "job status": {
+      "options": {
+        "--job": {
+          "type": "string",
+          "required": true
+        },
+        "--json": {
+          "type": "boolean"
+        }
+      },
+      "sideEffects": "none"
+    },
+    "job collect": {
+      "options": {
+        "--job": {
+          "type": "string",
+          "required": true
+        },
+        "--output-directory": {
+          "type": "string",
+          "required": true
+        },
+        "--json": {
+          "type": "boolean"
+        }
+      },
+      "sideEffects": "local-write"
+    },
+    "round prepare": {
+      "options": {
+        "--job": {
+          "type": "string",
+          "required": true
+        },
+        "--image-id": {
+          "type": "string",
+          "required": true
+        },
+        "--prompt-file": {
+          "type": "string",
+          "required": true
+        },
+        "--json": {
+          "type": "boolean"
+        }
+      },
+      "sideEffects": "local-write"
+    },
+    "round attach": {
+      "options": {
+        "--job": {
+          "type": "string",
+          "required": true
+        },
+        "--image-id": {
+          "type": "string",
+          "required": true
+        },
+        "--task-json": {
+          "type": "string",
+          "required": true
+        },
+        "--json": {
+          "type": "boolean"
+        }
+      },
+      "sideEffects": "local-write"
+    },
+    "round review": {
+      "options": {
+        "--job": {
+          "type": "string",
+          "required": true
+        },
+        "--image-id": {
+          "type": "string",
+          "required": true
+        },
+        "--review": {
+          "type": "string",
+          "required": true
+        },
+        "--json": {
+          "type": "boolean"
+        }
+      },
+      "sideEffects": "local-write"
+    },
+    "doctor": {
+      "options": {
+        "--json": {
+          "type": "boolean"
+        }
+      },
+      "sideEffects": "none"
+    },
+    "version": {
+      "options": {
+        "--json": {
+          "type": "boolean"
+        }
+      },
+      "sideEffects": "none"
+    },
+    "capabilities": {
+      "options": {
+        "--json": {
+          "type": "boolean"
+        }
+      },
+      "sideEffects": "none"
+    },
+    "help": {
+      "options": {
+        "--json": {
+          "type": "boolean"
+        }
+      },
+      "sideEffects": "none"
+    },
+    "skill source": {
+      "options": {
+        "--json": {
+          "type": "boolean"
+        }
+      },
+      "sideEffects": "none"
+    },
+    "skill status": {
+      "options": {
+        "--agent": {
+          "type": "string"
+        },
+        "--home": {
+          "type": "string"
+        },
+        "--target-directory": {
+          "type": "string"
+        },
+        "--json": {
+          "type": "boolean"
+        }
+      },
+      "sideEffects": "none"
+    },
+    "skill install": {
+      "options": {
+        "--agent": {
+          "type": "string"
+        },
+        "--home": {
+          "type": "string"
+        },
+        "--target-directory": {
+          "type": "string"
+        },
+        "--mode": {
+          "type": "string"
+        },
+        "--backup-edits": {
+          "type": "boolean"
+        },
+        "--json": {
+          "type": "boolean"
+        }
+      },
+      "sideEffects": "local-write"
+    },
+    "skill update": {
+      "options": {
+        "--agent": {
+          "type": "string"
+        },
+        "--home": {
+          "type": "string"
+        },
+        "--target-directory": {
+          "type": "string"
+        },
+        "--mode": {
+          "type": "string"
+        },
+        "--backup-edits": {
+          "type": "boolean"
+        },
+        "--json": {
+          "type": "boolean"
+        }
+      },
+      "sideEffects": "local-write"
+    },
+    "update status": {
+      "options": {
+        "--json": {
+          "type": "boolean"
+        }
+      },
+      "sideEffects": "none"
+    },
+    "update check": {
+      "options": {
+        "--json": {
+          "type": "boolean"
+        }
+      },
+      "sideEffects": "none"
+    },
+    "update install": {
+      "options": {
+        "--json": {
+          "type": "boolean"
+        },
+        "--yes": {
+          "type": "boolean"
+        }
+      },
+      "sideEffects": "package-and-skill-update"
+    }
+  },
+  "automaticUpdates": {
+    "enabledByDefault": true,
+    "intervalHours": 24,
+    "timeoutMs": 1500,
+    "defaultMode": "notify",
+    "trigger": "Successful board render, asset import/freeze, job create or round prepare via package CLI. Polling/version/help remain offline.",
+    "configuration": "PRODUCT_REFERENCE_REPLACEMENT_STATE_DIR optional user state directory; update status shows policy.",
+    "disable": "PRODUCT_REFERENCE_REPLACEMENT_UPDATE_CHECK=0",
+    "recovery": "Offline results cached for 24h; exclusive lock; preserve malformed user cache.",
+    "installation": "explicit-only",
+    "channel": "latest"
+  },
+  "platforms": {
+    "codex_macos": "local scripts tested; full Agent generation untested",
+    "sealseek_macos": "implemented; full host flow untested",
+    "windows": "implemented; CI verification required"
+  },
+  "boundary": "Application Skill owns visual choices and acceptance; package executes local deterministic work. Generation uses dynamically resolved sealseek-media."
+}

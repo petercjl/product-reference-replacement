@@ -1,0 +1,13 @@
+{
+  "name": "@petercjl/product-reference-replacement",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Reusable product asset boards and single-image or batch replacement application Skill.",
+  "engines": {
+    "node": ">=22"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "sharp": "0.35.5"
+  }
+}

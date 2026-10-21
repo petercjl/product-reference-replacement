@@ -1,0 +1,44 @@
+{
+  "name": "@petercjl/product-reference-replacement",
+  "version": "0.1.0",
+  "description": "Reusable product asset boards and iterative product replacement with a portable Agent Skill.",
+  "type": "module",
+  "bin": {
+    "product-reference-replacement": "bin/product-reference-replacement.mjs"
+  },
+  "files": [
+    "bin",
+    "src",
+    "skills/product-reference-replacement/SKILL.md",
+    "skills/product-reference-replacement/agents",
+    "skills/product-reference-replacement/adapters",
+    "skills/product-reference-replacement/assets",
+    "skills/product-reference-replacement/references",
+    "skills/product-reference-replacement/scripts",
+    "skills/product-reference-replacement/capabilities.json",
+    "skills/product-reference-replacement/package.json",
+    "capabilities.json",
+    "skill-integrity.json",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/petercjl/product-reference-replacement.git"
+  },
+  "homepage": "https://github.com/petercjl/product-reference-replacement#readme",
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "check": "node --check bin/product-reference-replacement.mjs && npm test"
+  },
+  "dependencies": {
+    "sharp": "0.35.5"
+  }
+}

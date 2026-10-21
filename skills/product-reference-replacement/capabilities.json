@@ -1,0 +1,214 @@
+{
+  "schema": "portable-skill-capabilities",
+  "schema_version": "1.0.0",
+  "skill": "product-reference-replacement",
+  "target_platforms": [
+    "codex",
+    "sealseek",
+    "generic"
+  ],
+  "capabilities": [
+    {
+      "id": "workspace.files",
+      "purpose": "保留源图、版本与排他写入",
+      "required": true,
+      "required_features": [
+        "read",
+        "exclusive-write"
+      ],
+      "input_fields": [
+        "request"
+      ],
+      "output_fields": [
+        "ok",
+        "artifacts",
+        "metadata",
+        "task_id",
+        "cost",
+        "warnings"
+      ],
+      "side_effects": {
+        "external_mutation": false,
+        "may_cost_money": false,
+        "authorization": "Local asset work within user scope. Paid scene generation requires user-authorized mode and scope; asset approval alone grants no paid generation."
+      },
+      "errors": [
+        "CAPABILITY_UNAVAILABLE",
+        "FEATURE_UNSUPPORTED",
+        "OUTPUT_CONTRACT_FAILED"
+      ]
+    },
+    {
+      "id": "image.inspect",
+      "purpose": "逐图与局部实际视觉检查",
+      "required": true,
+      "required_features": [
+        "local-images",
+        "detail-inspection"
+      ],
+      "input_fields": [
+        "request"
+      ],
+      "output_fields": [
+        "ok",
+        "artifacts",
+        "metadata",
+        "task_id",
+        "cost",
+        "warnings"
+      ],
+      "side_effects": {
+        "external_mutation": false,
+        "may_cost_money": false,
+        "authorization": "Local asset work within user scope. Paid scene generation requires user-authorized mode and scope; asset approval alone grants no paid generation."
+      },
+      "errors": [
+        "CAPABILITY_UNAVAILABLE",
+        "FEATURE_UNSUPPORTED",
+        "OUTPUT_CONTRACT_FAILED"
+      ]
+    },
+    {
+      "id": "local.assets",
+      "purpose": "确定性16:9标注资产图与来源记录",
+      "required": true,
+      "required_features": [
+        "exif-crop",
+        "ratio-preserving",
+        "labelled-board",
+        "source-hashes",
+        "freeze-approved"
+      ],
+      "input_fields": [
+        "request"
+      ],
+      "output_fields": [
+        "ok",
+        "artifacts",
+        "metadata",
+        "task_id",
+        "cost",
+        "warnings"
+      ],
+      "side_effects": {
+        "external_mutation": false,
+        "may_cost_money": false,
+        "authorization": "Local asset work within user scope. Paid scene generation requires user-authorized mode and scope; asset approval alone grants no paid generation."
+      },
+      "errors": [
+        "CAPABILITY_UNAVAILABLE",
+        "FEATURE_UNSUPPORTED",
+        "OUTPUT_CONTRACT_FAILED"
+      ]
+    },
+    {
+      "id": "application.state",
+      "purpose": "单张/明确批量、共享资产与四轮控制",
+      "required": true,
+      "required_features": [
+        "single-default",
+        "explicit-batch",
+        "shared-asset",
+        "single-request",
+        "four-round-limit",
+        "same-task-recovery",
+        "progress"
+      ],
+      "input_fields": [
+        "request"
+      ],
+      "output_fields": [
+        "ok",
+        "artifacts",
+        "metadata",
+        "task_id",
+        "cost",
+        "warnings"
+      ],
+      "side_effects": {
+        "external_mutation": false,
+        "may_cost_money": false,
+        "authorization": "Local asset work within user scope. Paid scene generation requires user-authorized mode and scope; asset approval alone grants no paid generation."
+      },
+      "errors": [
+        "CAPABILITY_UNAVAILABLE",
+        "FEATURE_UNSUPPORTED",
+        "OUTPUT_CONTRACT_FAILED"
+      ]
+    },
+    {
+      "id": "media.generate",
+      "purpose": "指定模型的两图单张生成",
+      "required": false,
+      "required_features": [
+        "ordered-references",
+        "single-output",
+        "nano-banana-pro",
+        "task-recovery",
+        "local-artifacts",
+        "dry-run"
+      ],
+      "input_fields": [
+        "request"
+      ],
+      "output_fields": [
+        "ok",
+        "artifacts",
+        "metadata",
+        "task_id",
+        "cost",
+        "warnings"
+      ],
+      "side_effects": {
+        "external_mutation": true,
+        "may_cost_money": true,
+        "authorization": "Local asset work within user scope. Paid scene generation requires user-authorized mode and scope; asset approval alone grants no paid generation."
+      },
+      "errors": [
+        "CAPABILITY_UNAVAILABLE",
+        "FEATURE_UNSUPPORTED",
+        "OUTPUT_CONTRACT_FAILED"
+      ]
+    },
+    {
+      "id": "long.images",
+      "purpose": "长详情语义切片",
+      "required": false,
+      "required_features": [
+        "analyze",
+        "preview",
+        "cut",
+        "coordinates"
+      ],
+      "input_fields": [
+        "request"
+      ],
+      "output_fields": [
+        "ok",
+        "artifacts",
+        "metadata",
+        "task_id",
+        "cost",
+        "warnings"
+      ],
+      "side_effects": {
+        "external_mutation": false,
+        "may_cost_money": false,
+        "authorization": "Local asset work within user scope. Paid scene generation requires user-authorized mode and scope; asset approval alone grants no paid generation."
+      },
+      "errors": [
+        "CAPABILITY_UNAVAILABLE",
+        "FEATURE_UNSUPPORTED",
+        "OUTPUT_CONTRACT_FAILED"
+      ]
+    }
+  ],
+  "conditional_dependencies": {
+    "media.generate": "Mode B2 only",
+    "long.images": "Mode A1 long images only"
+  },
+  "host_resolution": {
+    "fallback_adapter": "generic",
+    "custom_destination": "Caller resolves its own Skill directory and supplies --target-directory."
+  }
+}

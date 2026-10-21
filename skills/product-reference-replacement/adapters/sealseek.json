@@ -1,0 +1,93 @@
+{
+  "schema": "portable-skill-adapter",
+  "platform": "sealseek",
+  "mappings": [
+    {
+      "capability_id": "workspace.files",
+      "status": "implemented",
+      "features": [
+        "read",
+        "exclusive-write"
+      ],
+      "implementation": {
+        "kind": "instruction",
+        "instructions": "Use current host file tools; inspect metadata, preserve originals and use new paths."
+      }
+    },
+    {
+      "capability_id": "image.inspect",
+      "status": "implemented",
+      "features": [
+        "local-images",
+        "detail-inspection"
+      ],
+      "implementation": {
+        "kind": "instruction",
+        "instructions": "Use current host advertised local image viewing, including original-size detail views. Missing vision blocks inspection; do not replace vision with metadata."
+      }
+    },
+    {
+      "capability_id": "local.assets",
+      "status": "implemented",
+      "features": [
+        "exif-crop",
+        "ratio-preserving",
+        "labelled-board",
+        "source-hashes",
+        "freeze-approved"
+      ],
+      "implementation": {
+        "kind": "script",
+        "instructions": "Resolve this canonical Skill root; run product-reference-replacement board render and asset import/freeze according to references/tool-contract.md. Install the complete npm package and verify its doctor if absent."
+      }
+    },
+    {
+      "capability_id": "application.state",
+      "status": "implemented",
+      "features": [
+        "single-default",
+        "explicit-batch",
+        "shared-asset",
+        "single-request",
+        "four-round-limit",
+        "same-task-recovery",
+        "progress"
+      ],
+      "implementation": {
+        "kind": "script",
+        "instructions": "Resolve this Skill root and run job create/status/collect and round prepare/attach/review through the product-reference-replacement package CLI. The scripts never submit media generation."
+      }
+    },
+    {
+      "capability_id": "media.generate",
+      "status": "implemented",
+      "features": [
+        "ordered-references",
+        "single-output",
+        "nano-banana-pro",
+        "task-recovery",
+        "local-artifacts",
+        "dry-run"
+      ],
+      "implementation": {
+        "kind": "cli",
+        "instructions": "Resolve sealseek-media skill source --json; load its complete canonical Skill and current host adapter. Verify live nano-banana-pro contract and follow the same saved task; return downloaded summary to B2."
+      }
+    },
+    {
+      "capability_id": "long.images",
+      "status": "implemented",
+      "features": [
+        "analyze",
+        "preview",
+        "cut",
+        "coordinates"
+      ],
+      "implementation": {
+        "kind": "cli",
+        "instructions": "Resolve longslice skill source; load current semantic-image-slicer Skill. Complete analyze, actual preview inspection and cut; return ordered slices and coordinates to A1."
+      }
+    }
+  ],
+  "os_evidence": "Script implementation is portable Node.js; macOS verification recorded in development reports. Other OS/Agent runtime evidence remains untested."
+}
