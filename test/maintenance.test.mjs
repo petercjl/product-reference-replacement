@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';import os from 'node:os';import path from 'node:path';
 import {upgrade} from '../src/maintenance.mjs';import {install,status} from '../src/lifecycle.mjs';
 import {PACKAGE,writeNew,packageInfo} from '../src/common.mjs';
+import {latestOperation} from '../src/operations.mjs';
 const VERSION=(await packageInfo()).version;
 async function fixture(t){
  const d=await fs.mkdtemp(path.join(os.tmpdir(),'neutral-maintenance-'));t.after(()=>fs.rm(d,{recursive:true,force:true}));
@@ -17,3 +18,21 @@ test('unresolved target refuses before network or package mutation',async t=>{co
 test('same-version update installs missing selected Skill and preserves other host',async t=>{const f=await fixture(t);await writeNew(path.join(f.other,'untouched'),'mine');const r=await upgrade({yes:true,targetDirectory:f.targetDirectory,mode:'copy'},{root:f.root,run:f.run});assert.equal(r.installed,VERSION);assert.equal(r.skill_verified,true);assert.equal(r.host_registration,'pending');assert.equal(await fs.readFile(path.join(f.other,'untouched'),'utf8'),'mine');assert.equal(f.calls.some(([c,a])=>c==='npm'&&a[0]==='install'),false);const again=await upgrade({yes:true,targetDirectory:f.targetDirectory},{root:f.root,run:f.run});assert.equal(again.changed,false);});
 test('same-version stale Skill repairs after verified backup; edits and unrelated paths block',async t=>{const f=await fixture(t);await install({source:f.source,targetDirectory:f.targetDirectory,mode:'copy'});await fs.writeFile(path.join(f.source,'SKILL.md'),'new canonical');const r=await upgrade({yes:true,targetDirectory:f.targetDirectory},{root:f.root,run:f.run});assert.equal(await fs.readFile(path.join(r.backup,'skill/SKILL.md'),'utf8'),'original');assert.equal(await fs.readFile(path.join(f.targetDirectory,'SKILL.md'),'utf8'),'new canonical');await fs.writeFile(path.join(f.targetDirectory,'SKILL.md'),'user edit');const n=f.calls.length;await assert.rejects(upgrade({yes:true,targetDirectory:f.targetDirectory},{root:f.root,run:f.run}),{code:'LOCAL_EDITS'});assert.equal(f.calls.length,n);await writeNew(path.join(f.other,'user-file'),'owned');await assert.rejects(upgrade({yes:true,targetDirectory:f.other},{root:f.root,run:f.run}),{code:'UNMANAGED_TARGET'});});
 test('failed replacement reports recovery snapshot and retains selected Skill',async t=>{const f=await fixture(t);await install({source:f.source,targetDirectory:f.targetDirectory,mode:'copy'});const run=async(c,a)=>c==='npm'&&a[0]==='view'?JSON.stringify('9.9.9'):c==='npm'&&a[0]==='install'?Promise.reject(Error('simulated install failure')):f.run(c,a);await assert.rejects(upgrade({yes:true,targetDirectory:f.targetDirectory},{root:f.root,run}),e=>e.message.includes('Recoverable package and Skill snapshots:'));assert.equal(await fs.readFile(path.join(f.targetDirectory,'SKILL.md'),'utf8'),'original');assert.equal((await fs.readdir(path.dirname(f.targetDirectory))).includes('.product-reference-maintenance-lock'),false);});
+
+test('uncertain package acquisition is inspected and resumed without repeating npm install',async t=>{
+ const f=await fixture(t);let installs=0;
+ const run=async(c,a)=>{
+  if(c==='npm'&&a[0]==='install'){
+   installs++;const dest=path.join(a[a.indexOf('--prefix')+1],'node_modules',...PACKAGE.split('/'));
+   await fs.cp(f.root,dest,{recursive:true});
+   throw Object.assign(new Error('lost install response; token=private-value'),{code:'COMMAND_FAILED',details:{exit_code:null,system_code:'ETIMEDOUT'}});
+  }
+  return f.run(c,a);
+ };
+ await assert.rejects(upgrade({yes:true,targetDirectory:f.targetDirectory},{root:f.root,currentVersion:'0.3.0',run}),e=>{
+  assert.equal(e.details.stage,'package-acquire');assert.equal(e.details.package_changed,false);assert.equal(e.details.skill_verified,false);assert.equal(e.details.system_code,'ETIMEDOUT');assert.ok(e.details.operation_receipt);return true;
+ });
+ const state=await latestOperation(f.targetDirectory);assert.equal(state.package_acquired,true);assert.equal(state.observed_candidate_version,VERSION);assert.doesNotMatch(JSON.stringify(state),/private-value/);
+ const recovered=await upgrade({yes:true,targetDirectory:f.targetDirectory},{root:f.root,currentVersion:'0.3.0',run});
+ assert.equal(recovered.reused_candidate,true);assert.equal(installs,1);assert.equal(recovered.skill_verified,true);
+});

@@ -1,5 +1,6 @@
 import fs from 'node:fs/promises';import path from 'node:path';import {spawnSync} from 'node:child_process';
 import {ROOT,PACKAGE,packageInfo,exists,fail,hashes} from './common.mjs';
+import {execute} from './command.mjs';
 export async function materializeRuntime(stage){
  const runtime=path.join(stage,'.runtime');await fs.mkdir(runtime);
  const pkg=await packageInfo();
@@ -8,8 +9,8 @@ export async function materializeRuntime(stage){
   if(!await exists(from))continue;const to=path.join(runtime,name);await fs.mkdir(path.dirname(to),{recursive:true});
   await fs.cp(from,to,{recursive:true,filter:p=>!['node_modules','.runtime'].includes(path.basename(p))});
  }
- const result=spawnSync('npm',['install','--prefix',runtime,'--ignore-scripts','--omit=dev','--no-audit','--no-fund','--prefer-offline'],{encoding:'utf8',timeout:180000,windowsHide:true,shell:process.platform==='win32',env:{...process.env,npm_config_dry_run:'false',npm_config_json:'false'}});
- if(result.status!==0)fail('RUNTIME_INSTALL_FAILED','Target-owned runtime dependencies failed to install; old Skill preserved.');
+ try{execute('npm',['install','--prefix',runtime,'--ignore-scripts','--omit=dev','--no-audit','--no-fund','--prefer-offline','--dry-run=false','--json=false']);}
+ catch(error){error.code='RUNTIME_INSTALL_FAILED';throw error;}
  if(!await verifyRuntime(stage,pkg.version))fail('RUNTIME_VERIFY_FAILED','Isolated runtime failed dependency/version verification.');
  return {entry:'.runtime/bin/product-reference-replacement.mjs',version:pkg.version};
 }

@@ -36,6 +36,8 @@ description: 制作可复用的16:9产品资产图并与用户沟通定稿，或
 
 运行 `product-reference-replacement doctor --json`。安装或更新诊断先使用包的 `skill source/status/install/update` 和 `update` 入口；从 `skill source --json` 返回source动态加载当前完整Skill。自定义宿主使用自己解析的明确target-directory，更新后同步相同目录。包未安装时由Agent安装完整npm包；本地依赖缺失按 [工具合同](references/tool-contract.md) 修复包依赖并重跑；媒体未安装时可完成本地规划，生成阶段等待依赖修复；长图缺切片能力则只阻塞相应长图分支。
 
+更新失败或结果未知时，使用可用的新入口查询 `update status --target-directory <当前目标> --json`，结合实际版本和Skill状态定位已完成阶段。包已获取时复用已验证候选完成同步；先保存或解决本地修改，再恢复。保留替换前备份和操作回执，核验完成后再讨论清理。历史托管link更新请求由包迁移为实体副本；旧父进程仅显示通用错误时，以新版入口的持久回执获取具体错误和恢复动作。
+
 采用hybrid知识层，**只在当前知识依赖节点按需加载**：[SCHEMA](references/SCHEMA.md)、[index](references/index.md)、近期 [log](references/log.md)，再加载该节点的query和其必读topic；后续节点资料延迟读取。维护来源清单和开发评估不作为启动阅读材料。
 
 ## 模式A：产品资料 → 可复用资产图

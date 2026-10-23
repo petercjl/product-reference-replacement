@@ -1,3 +1,5 @@
+import {beginOperation,operationFailure} from './operations.mjs';
+import {legacyBackup} from './legacy-backup.mjs';
 import {materializeRuntime,verifyRuntime} from './isolated-runtime.mjs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
@@ -46,21 +48,41 @@ export async function status({agent='generic',home,targetDirectory,source=SOURCE
  const receiptCurrent=m.version===version&&m.runtime_entry==='.runtime/bin/product-reference-replacement.mjs'&&m.runtime_version===version;
  return {ok:true,installed:true,managed:true,mode:'copy',target,source,version:m.version,edited,up_to_date:changed(current,expected).length===0&&receiptCurrent&&runtimeValid,runtime_verified:runtimeValid,runtime_entry:path.join(target,'.runtime/bin/product-reference-replacement.mjs'),host_registration:'pending'};
 }
-export async function install({agent='generic',home,targetDirectory,mode,source=SOURCE,update=false,backupEdits=false,forceInPlace=false}={}){
+export async function install(options={}){
+ const target=targetFor(options.agent??'generic',options.home,options.targetDirectory);
+ const op=await beginOperation(target,'skill-update',{stage:'skill-preflight',package_changed:false,skill_verified:false});
+ try{
+  const result=await performInstall(options,op);
+  const receipt=await op.record({...result,ok:true,stage:'complete',skill_changed:result.changed,skill_verified:result.up_to_date});
+  return {...result,operation_receipt:receipt,skill_changed:result.changed,package_changed:op.state.package_changed,pre_replacement_backup:op.state.pre_replacement_backup??null,migration:op.state.migration};
+ }catch(error){throw await operationFailure(op,error);}
+}
+async function performInstall({agent='generic',home,targetDirectory,mode,source=SOURCE,update=false,backupEdits=false,forceInPlace=false},op){
  const s=await status({agent,home,targetDirectory,source}),target=s.target;
  mode??='copy';
- if(mode!=='copy')fail('ISOLATION_REQUIRED','Skill installation requires a physical copy; link mode is unsupported.');
+ const legacyMode=mode==='link'&&update&&s.installed&&s.managed;
+ if(mode!=='copy'&&!legacyMode)fail('ISOLATION_REQUIRED','Skill installation requires a physical copy; historical link mode is accepted only for updating a managed target.');
+ op.state.migration={requested_mode:mode,from:s.mode??null,to:'copy',performed:false,legacy_mode_translated:legacyMode};
+ mode='copy';
+ const previous=await legacyBackup(target,source);
+ op.state.pre_replacement_backup=previous;
+ op.state.package_changed=Boolean(previous);
+ op.state.package_verified=true;
  if(s.installed&&!s.managed)fail('UNMANAGED_TARGET',`Preserving unrelated installation: ${target}`);
  if(s.edited?.length&&!backupEdits)fail('LOCAL_EDITS','Managed Skill content changed. Preserve it or use skill update --backup-edits.');
  if(s.installed&&!update&&!s.needs_migration)return {...s,changed:false,completion:s.up_to_date?'host-registration-pending':'skill-sync-required'};
  if(s.up_to_date&&!s.edited?.length)return {...s,changed:false,completion:'host-registration-pending'};
+ if(s.mode==='link'&&previous&&!previous.skill_matches_package)fail('LOCAL_EDITS','Preserve modified pre-replacement Skill snapshot before migrating the legacy link.');
+ await op.record({stage:'skill-backup'});
  await fs.mkdir(path.dirname(target),{recursive:true});
  let backup=null;
  if(s.installed){
   backup=await fs.mkdtemp(path.join(path.dirname(target),'.product-reference-backup-'));
-  await fs.cp(await fs.realpath(target),backup,{recursive:true});
-  if(JSON.stringify(await hashes(backup))!==JSON.stringify(await hashes(await fs.realpath(target))))fail('BACKUP_FAILED','Backup hash verification failed.');
+  const backupSource=s.mode==='link'&&previous?previous.skill:await fs.realpath(target);
+  await fs.cp(backupSource,backup,{recursive:true});
+  if(JSON.stringify(await hashes(backup))!==JSON.stringify(await hashes(backupSource)))fail('BACKUP_FAILED','Backup hash verification failed.');
  }
+ op.state.backup=backup;
  if(backup&&await exists(path.join(target,'.runtime'))&&JSON.stringify(await hashes(path.join(backup,'.runtime')))!==JSON.stringify(await hashes(path.join(target,'.runtime'))))fail('BACKUP_FAILED','Runtime backup hash verification failed.');
  // Host-owned registration metadata lives outside canonical ownership. Retain it on both copy and link migrations.
  const hasMetadata=s.installed&&await exists(path.join(target,'agents'));
@@ -71,9 +93,11 @@ export async function install({agent='generic',home,targetDirectory,mode,source=
   {
    await fs.cp(source,stage,{recursive:true,filter:p=>path.basename(p)!=='node_modules'});
    if(hasMetadata){await fs.rm(path.join(stage,'agents'),{recursive:true,force:true});await fs.cp(path.join(target,'agents'),path.join(stage,'agents'),{recursive:true});}
+   await op.record({stage:'runtime-install'});
    const runtime=await materializeRuntime(stage);
    await writeNew(path.join(stage,MARKER),JSON.stringify({package:PACKAGE,version:(await packageInfo()).version,source_provenance:source,source:path.join(target,'.runtime/skills/product-reference-replacement'),runtime_entry:runtime.entry,runtime_version:runtime.version,runtime_hashes:await hashes(path.join(stage,'.runtime')),hashes:await hashes(stage)},null,2)+'\n');
   }
+  await op.record({stage:'skill-replace'});
   let old=null;
   if(s.installed){
    old=path.join(stageRoot,'previous');
@@ -84,8 +108,9 @@ export async function install({agent='generic',home,targetDirectory,mode,source=
     return {...await verified({agent,targetDirectory:target,source}),changed:true,backup,in_place:true,completion:'host-registration-pending'};
    }
   }
-  try{await fs.rename(stage,target);await verified({agent,targetDirectory:target,source});}
+  try{await fs.rename(stage,target);await op.record({stage:'skill-verify'});await verified({agent,targetDirectory:target,source});}
   catch(error){if(old){await fs.rm(target,{recursive:true,force:true});await fs.rename(old,target);}throw error;}
+  op.state.migration.performed=s.mode==='link';
   return {...await verified({agent,targetDirectory:target,source}),changed:true,backup,completion:'host-registration-pending'};
  }finally{await fs.rm(stageRoot,{recursive:true,force:true});}
 }

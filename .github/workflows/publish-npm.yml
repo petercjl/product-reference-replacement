@@ -45,6 +45,7 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: node scripts/packed-smoke.mjs
+      - run: node scripts/legacy-upgrade-smoke.mjs
   publish:
     if: ${{ !inputs.validate_only }}
     needs: qa
