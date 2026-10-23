@@ -1,6 +1,6 @@
 {
   "name": "@petercjl/product-reference-replacement",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "type": "module",
   "description": "Reusable product asset boards and single-image or batch replacement application Skill.",
   "engines": {
