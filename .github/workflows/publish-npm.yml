@@ -14,6 +14,11 @@ on:
         default: latest
         type: choice
         options: [latest, next]
+      validate_only:
+        description: Run cross-platform QA without publication
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: write
@@ -28,7 +33,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest, windows-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     env:
       PRODUCT_REFERENCE_REPLACEMENT_UPDATE_CHECK: '0'
@@ -41,6 +46,7 @@ jobs:
       - run: npm test
       - run: node scripts/packed-smoke.mjs
   publish:
+    if: ${{ !inputs.validate_only }}
     needs: qa
     runs-on: ubuntu-latest
     timeout-minutes: 20

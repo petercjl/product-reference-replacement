@@ -22,7 +22,12 @@ async function ownedSource(actual){
 export async function status({agent='generic',home,targetDirectory,source=SOURCE}={}){
  const target=targetFor(agent,home,targetDirectory),st=await exists(target);
  const sourceReal=await fs.realpath(source);
- if(target===sourceReal||sourceReal.startsWith(target+path.sep)||target.startsWith(sourceReal+path.sep))fail('INVALID_INPUT','Keep installation targets separate from the canonical Skill source.');
+ const targetReal=st&&!st.isSymbolicLink()?await fs.realpath(target):path.join(await fs.realpath(path.dirname(target)).catch(()=>path.dirname(target)),path.basename(target));
+ const normalize=p=>process.platform==='win32'?p.toLowerCase():p;
+ const a=normalize(targetReal),b=normalize(sourceReal);
+ const marker=st&&!st.isSymbolicLink()?await readJSON(path.join(target,MARKER)).catch(()=>null):null;
+ const ownedRuntime=marker?.package===PACKAGE&&marker.runtime_entry==='.runtime/bin/product-reference-replacement.mjs'&&normalize(path.join(targetReal,'.runtime/skills/product-reference-replacement'))===b;
+ if(!ownedRuntime&&(a===b||b.startsWith(a+path.sep)||a.startsWith(b+path.sep)))fail('INVALID_INPUT','Keep installation targets separate from the canonical Skill source.');
  if(!st)return {ok:true,installed:false,managed:false,target,source,host_registration:'pending'};
  if(st.isSymbolicLink()){
   const actual=await fs.realpath(target).catch(()=>null),managed=actual===sourceReal||await ownedSource(actual);
