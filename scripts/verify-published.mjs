@@ -3,7 +3,7 @@ const pkg=JSON.parse(await fs.readFile(new URL('../package.json',import.meta.url
 const env={...process.env,PRODUCT_REFERENCE_REPLACEMENT_UPDATE_CHECK:'0',npm_config_dry_run:'false',npm_config_json:'false'};
 function run(cmd,args){const r=spawnSync(cmd,args,{encoding:'utf8',env,timeout:180000,windowsHide:true,shell:process.platform==='win32'&&cmd==='npm'});if(r.status!==0)throw Error((r.stderr||r.stdout).slice(-2000));return r.stdout;}
 try{
- let visible=false;for(let n=0;n<20;n++){try{const data=JSON.parse(run('npm',['view',pkg.name,'version','dist-tags','--json','--prefer-online']));if(data.version===pkg.version&&data['dist-tags']?.latest===pkg.version){visible=true;break;}}catch{}await new Promise(r=>setTimeout(r,15000));}
+ let visible=false;for(let n=0;n<60;n++){try{const data=JSON.parse(run('npm',['view',pkg.name,'version','dist-tags','--json','--prefer-online']));if(data.version===pkg.version&&data['dist-tags']?.latest===pkg.version){visible=true;break;}}catch{}await new Promise(r=>setTimeout(r,15000));}
  assert.ok(visible,'Exact stable registry version/latest unavailable');
  const prefix=path.join(tmp,'bootstrap');run('npm',['install','--prefix',prefix,pkg.name+'@'+pkg.version,'--ignore-scripts','--prefer-online','--no-audit','--no-fund']);
  const root=path.join(prefix,'node_modules',...pkg.name.split('/'));const cli=path.join(root,'bin/product-reference-replacement.mjs');
