@@ -49,7 +49,7 @@
       ],
       "implementation": {
         "kind": "script",
-        "instructions": "Resolve the canonical Skill from a managed link or its installation source marker; load the matching package Skill. Use node <owning-package-root>/bin/product-reference-replacement.mjs for board render/check and asset freeze/import. Select generic plus one category template, preserve source regions, inspect actual board and 1600/1920 previews, and enforce the visual/geometry contract. Never infer user approval from technical success. For mode A use board plan/status, panel prepare/attach/review, then board compose; preserve fixed boxes and all other panel originals when revising one panel. Deliver n original images plus the board."
+        "instructions": "Resolve runtime_entry from the current physical Skill installation marker relative to that Skill directory; execute the target-owned CLI and dependencies. Provenance paths are not execution roots. Select generic plus one category template, preserve source regions, inspect actual board and 1600/1920 previews, and enforce the visual/geometry contract. Never infer user approval from technical success. For mode A use board plan/status, panel prepare/attach/review, then board compose; preserve fixed boxes and all other panel originals when revising one panel. Deliver n original images plus the board."
       }
     },
     {
@@ -68,7 +68,7 @@
       ],
       "implementation": {
         "kind": "script",
-        "instructions": "Resolve this Skill root and run job create/status/collect and round prepare/attach/review through the product-reference-replacement package CLI. The scripts never submit media generation. Record an inspected blueprint before preparing new jobs; bind its hash and use product/scene/contact/occlusion/text review checks. Legacy jobs remain recoverable."
+        "instructions": "Resolve this physical Skill root and its target-owned runtime_entry, then run job create/status/collect and round prepare/attach/review through the product-reference-replacement package CLI. The scripts never submit media generation. Record an inspected blueprint before preparing new jobs; bind its hash and use product/scene/contact/occlusion/text review checks. Legacy jobs remain recoverable."
       }
     },
     {

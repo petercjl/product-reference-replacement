@@ -32,7 +32,7 @@ description: 制作可复用的16:9产品资产图并与用户沟通定稿，或
 
 从当前宿主加载 [能力合同](capabilities.json) 与 [通用适配](adapters/generic.json)，根据宿主实际提供的能力执行。使用宿主广告的看图能力，不能以文件存在或OCR替代实际视觉检查。
 
-运行前解析本Skill的规范位置：链接取真实目录，托管副本从安装标记的source回到规范目录并读取其完整SKILL。若规范目录位于拥有本Skill的包的skills下，使用该包根目录的 `node <包根>/bin/product-reference-replacement.mjs` 执行下文命令；使用PATH入口时先确认其skill source与规范目录一致。这样同版本开发预览和已发布包可并存，避免新Skill误调旧CLI。
+运行前读取当前实体安装目录的 `.product-reference-install.json`，按其中相对 `runtime_entry` 从当前Skill目录解析本地配套CLI；完整加载当前实体SKILL和相对资源。每个宿主使用自己的 `.runtime`、脚本及依赖，`source_provenance`仅用于追溯。未安装时先按包根INSTALL.md完成实体安装；已有托管软链接通过skill update迁移。直接开发包中的规范Skill时使用该包根CLI。
 
 运行 `product-reference-replacement doctor --json`。安装或更新诊断先使用包的 `skill source/status/install/update` 和 `update` 入口；从 `skill source --json` 返回source动态加载当前完整Skill。自定义宿主使用自己解析的明确target-directory，更新后同步相同目录。包未安装时由Agent安装完整npm包；本地依赖缺失按 [工具合同](references/tool-contract.md) 修复包依赖并重跑；媒体未安装时可完成本地规划，生成阶段等待依赖修复；长图缺切片能力则只阻塞相应长图分支。
 

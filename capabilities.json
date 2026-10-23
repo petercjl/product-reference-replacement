@@ -497,7 +497,11 @@
     "updateGuide": "UPDATE.md",
     "install": "Read INSTALL.md, resolve the current host destination and registration mechanism; skill install --target-directory ABSOLUTE_SKILL_DIR; verify host discovery.",
     "update": "Read UPDATE.md; update install --target-directory ABSOLUTE_SKILL_DIR --yes; sync even at same version; refresh current host.",
-    "verification": "Real CLI version plus managed/up_to_date canonical Skill hashes and host-verified discovery/load. File synchronization reports host-registration-pending.",
-    "hostDirectoryDefaults": false
+    "verification": "Owning package, nested Skill, runtime and receipt versions agree; physical target and target-owned runtime survive deletion of bootstrap package and another host; verify actual host discovery.",
+    "hostDirectoryDefaults": false,
+    "installationMode": "copy",
+    "isolatedRuntimeRequired": true,
+    "sharedLinksAllowed": false,
+    "versionSource": "owning package.json; synchronize nested Skill manifest and receipts at release bump"
   }
 }

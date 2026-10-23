@@ -21,7 +21,8 @@
     "README.md",
     "LICENSE",
     "INSTALL.md",
-    "UPDATE.md"
+    "UPDATE.md",
+    "scripts/release-metadata.mjs"
   ],
   "engines": {
     "node": ">=22"
@@ -38,7 +39,10 @@
   "scripts": {
     "test": "node --test test/*.test.mjs",
     "check": "node --check bin/product-reference-replacement.mjs && npm test",
-    "postinstall": "node bin/install-notice.mjs"
+    "postinstall": "node bin/install-notice.mjs",
+    "version": "node scripts/release-metadata.mjs --write",
+    "prepack": "node scripts/release-metadata.mjs --quiet",
+    "check:release": "node scripts/release-metadata.mjs"
   },
   "dependencies": {
     "sharp": "0.35.5"

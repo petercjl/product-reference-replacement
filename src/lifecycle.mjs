@@ -1,3 +1,4 @@
+import {materializeRuntime,verifyRuntime} from './isolated-runtime.mjs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { SOURCE, ROOT, PACKAGE, exists, fail, hashes, packageInfo, readJSON, writeNew } from './common.mjs';
@@ -29,47 +30,51 @@ export async function status({agent='generic',home,targetDirectory,source=SOURCE
   const knownBaseline=actual&&managed?await readJSON(path.resolve(actual,'../../skill-integrity.json')).catch(()=>null):null;
   const baseline=knownBaseline?canonical(knownBaseline):current;
   const edited=changed(baseline,current),matches=actual===sourceReal&&!changed(current,canonical(await hashes(source))).length;
-  return {ok:true,installed:true,managed,mode:'link',target,source,actual,edited,up_to_date:matches&&!edited.length,host_registration:'pending'};
+  return {ok:true,installed:true,managed,mode:'link',target,source,actual,edited,up_to_date:false,needs_migration:true,host_registration:'pending'};
  }
  const m=await readJSON(path.join(target,MARKER)).catch(()=>null);
  if(m?.package!==PACKAGE)return {ok:true,installed:true,managed:false,target,source,host_registration:'pending'};
  const current=canonical(await hashes(target)),expected=canonical(await hashes(source));
  const edited=changed(current,canonical(m.hashes??{}));
- return {ok:true,installed:true,managed:true,mode:'copy',target,source,version:m.version,edited,up_to_date:changed(current,expected).length===0,host_registration:'pending'};
+ if(m.runtime_hashes){const now=await hashes(path.join(target,'.runtime')).catch(()=>({}));edited.push(...changed(now,m.runtime_hashes).map(k=>'.runtime/'+k));}
+ const version=(await packageInfo()).version;const runtimeValid=await verifyRuntime(target,version);
+ const receiptCurrent=m.version===version&&m.runtime_entry==='.runtime/bin/product-reference-replacement.mjs'&&m.runtime_version===version;
+ return {ok:true,installed:true,managed:true,mode:'copy',target,source,version:m.version,edited,up_to_date:changed(current,expected).length===0&&receiptCurrent&&runtimeValid,runtime_verified:runtimeValid,runtime_entry:path.join(target,'.runtime/bin/product-reference-replacement.mjs'),host_registration:'pending'};
 }
 export async function install({agent='generic',home,targetDirectory,mode,source=SOURCE,update=false,backupEdits=false,forceInPlace=false}={}){
  const s=await status({agent,home,targetDirectory,source}),target=s.target;
- mode??=s.mode??(process.platform==='win32'?'copy':'link');
- if(!['copy','link'].includes(mode))fail('INVALID_INPUT','mode must be copy or link.');
+ mode??='copy';
+ if(mode!=='copy')fail('ISOLATION_REQUIRED','Skill installation requires a physical copy; link mode is unsupported.');
  if(s.installed&&!s.managed)fail('UNMANAGED_TARGET',`Preserving unrelated installation: ${target}`);
  if(s.edited?.length&&!backupEdits)fail('LOCAL_EDITS','Managed Skill content changed. Preserve it or use skill update --backup-edits.');
- if(s.installed&&!update)return {...s,changed:false,completion:s.up_to_date?'host-registration-pending':'skill-sync-required'};
+ if(s.installed&&!update&&!s.needs_migration)return {...s,changed:false,completion:s.up_to_date?'host-registration-pending':'skill-sync-required'};
  if(s.up_to_date&&!s.edited?.length)return {...s,changed:false,completion:'host-registration-pending'};
  await fs.mkdir(path.dirname(target),{recursive:true});
  let backup=null;
  if(s.installed){
   backup=await fs.mkdtemp(path.join(path.dirname(target),'.product-reference-backup-'));
-  await fs.cp(await fs.realpath(target),backup,{recursive:true,filter:p=>path.basename(p)!=='node_modules'});
+  await fs.cp(await fs.realpath(target),backup,{recursive:true});
   if(JSON.stringify(await hashes(backup))!==JSON.stringify(await hashes(await fs.realpath(target))))fail('BACKUP_FAILED','Backup hash verification failed.');
  }
+ if(backup&&await exists(path.join(target,'.runtime'))&&JSON.stringify(await hashes(path.join(backup,'.runtime')))!==JSON.stringify(await hashes(path.join(target,'.runtime'))))fail('BACKUP_FAILED','Runtime backup hash verification failed.');
  // Host-owned registration metadata lives outside canonical ownership. Retain it on both copy and link migrations.
  const hasMetadata=s.installed&&await exists(path.join(target,'agents'));
  if(hasMetadata)mode='copy';
  const stageRoot=await fs.mkdtemp(path.join(path.dirname(target),'.product-reference-stage-'));
  const stage=path.join(stageRoot,'skill');
  try{
-  if(mode==='link')await fs.symlink(source,stage,process.platform==='win32'?'junction':'dir');
-  else{
+  {
    await fs.cp(source,stage,{recursive:true,filter:p=>path.basename(p)!=='node_modules'});
    if(hasMetadata){await fs.rm(path.join(stage,'agents'),{recursive:true,force:true});await fs.cp(path.join(target,'agents'),path.join(stage,'agents'),{recursive:true});}
-   await writeNew(path.join(stage,MARKER),JSON.stringify({package:PACKAGE,version:(await packageInfo()).version,source,hashes:await hashes(stage)},null,2)+'\n');
+   const runtime=await materializeRuntime(stage);
+   await writeNew(path.join(stage,MARKER),JSON.stringify({package:PACKAGE,version:(await packageInfo()).version,source_provenance:source,source:path.join(target,'.runtime/skills/product-reference-replacement'),runtime_entry:runtime.entry,runtime_version:runtime.version,runtime_hashes:await hashes(path.join(stage,'.runtime')),hashes:await hashes(stage)},null,2)+'\n');
   }
   let old=null;
   if(s.installed){
    old=path.join(stageRoot,'previous');
    try{if(forceInPlace)throw Object.assign(new Error('locked directory'),{code:'EPERM'});await fs.rename(target,old);}
    catch(e){
-    if(!['EPERM','EACCES','EBUSY'].includes(e.code)||s.mode==='link'||mode==='link')throw e;
+    if(!['EPERM','EACCES','EBUSY'].includes(e.code)||s.mode==='link')throw e;
     try{await syncInto(stage,target);}catch(error){await syncInto(backup,target);throw error;}
     return {...await verified({agent,targetDirectory:target,source}),changed:true,backup,in_place:true,completion:'host-registration-pending'};
    }

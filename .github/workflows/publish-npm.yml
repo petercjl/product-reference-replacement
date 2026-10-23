@@ -66,3 +66,5 @@ jobs:
         run: npx --yes --package @petercjl/npm-release-kit@0.1.4 npm-release-kit ci publish --release "${{ inputs.release }}" --tag "${{ inputs.tag }}"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Verify exact public package identity and isolated installation
+        run: node scripts/verify-published.mjs

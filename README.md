@@ -12,7 +12,7 @@
 
 > 请安装 @petercjl/product-reference-replacement，并将配套 Skill 安装到你当前使用的 Agent。
 
-安装 Agent 请先读取包根目录的 [安装指导](INSTALL.md)，更新时读取 [更新指导](UPDATE.md)。由当前 Agent 识别自己的 Skill 目录与注册方式，并验证能发现和加载 Skill。npm 安装成功仅完成运行时安装。
+安装 Agent 请先读取包根目录的 [安装指导](INSTALL.md)，更新时读取 [更新指导](UPDATE.md)。由当前 Agent 识别自己的 Skill 目录与注册方式，并验证能发现和加载 Skill。npm 安装成功仅完成引导包安装。每个Agent实体安装自己的Skill、配套运行时与依赖，相互隔离。
 
 包包含固定分区规划、单图版本、合成、来源追踪和任务记录工具。安装本包不授予生成服务访问权。资产图片生成与场景替换需要已配置的 sealseek-media；完整长详情页切片需要 semantic-image-slicer。Agent 会按实际任务检查依赖。
 
