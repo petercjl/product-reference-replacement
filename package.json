@@ -1,6 +1,6 @@
 {
   "name": "@petercjl/product-reference-replacement",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Reusable product asset boards and iterative product replacement with a portable Agent Skill.",
   "type": "module",
   "bin": {
