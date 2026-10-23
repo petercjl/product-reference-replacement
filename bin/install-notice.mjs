@@ -1,0 +1,1 @@
+console.log('Runtime installed. Skill installation is still required: read package-root INSTALL.md (UPDATE.md for upgrades), resolve this Agent’s own Skill directory, synchronize with --target-directory, then verify host registration/discovery. No host was modified automatically.');

@@ -1,8 +1,8 @@
 # npm 包执行入口
 
-所有运行操作通过拥有当前规范Skill的包CLI执行，保证使用相匹配的源码与依赖。规范目录在包的skills内时使用 `node <已解析包根>/bin/product-reference-replacement.mjs`；PATH入口先核对skill source匹配。托管副本从安装标记source动态回到规范目录，完整读取Skill。`skill source --json`返回source，完整读取其SKILL.md；`skill status/install/update --agent AGENT`管理Codex/SealSeek。其他合法Agent名须加 `--target-directory EXACT_SKILL_DIR`，由调用宿主解析自己的目录；显式目录优先，用户所有的非托管目录会被保护。复制安装和符号链接都保持规范内容一致，复制安装不需要在副本内运行npm。
+所有运行操作通过拥有当前规范Skill的包CLI执行，保证使用相匹配的源码与依赖。规范目录在包的skills内时使用 `node <已解析包根>/bin/product-reference-replacement.mjs`；PATH入口先核对skill source匹配。托管副本从安装标记source动态回到规范目录，完整读取Skill。`skill source --json`返回source，完整读取其SKILL.md；`skill status/install/update --target-directory EXACT_SKILL_DIR`管理当前宿主明确解析的绝对目录。任意合法Agent名仅作为可选标记，安装位置由当前宿主确定；用户所有的非托管目录会被保护。复制安装和符号链接都保持规范内容一致，复制安装不需要在副本内运行npm。
 
-`update status/check/install`分别展示策略、检查版本、在`--yes`授权下更新全局包并同步已识别的Codex/SealSeek托管目标。自定义目标在包更新后用相同参数执行skill update。开发源码保持Git管理，不自升级。普通业务CLI入口限时检查latest并缓存24小时，默认仅提示；`PRODUCT_REFERENCE_REPLACEMENT_UPDATE_CHECK=0`关闭，`PRODUCT_REFERENCE_REPLACEMENT_STATE_DIR`可指定外部状态目录。版本、帮助、状态轮询不访问更新网络。
+`update status/check/install`分别展示策略、检查版本、在`--yes --target-directory EXACT_SKILL_DIR`授权下更新受管理npm安装并同步该指定目标；相同包版本也检查和修复Skill。安装/更新后由当前宿主完成注册、刷新与发现验证；包内INSTALL.md/UPDATE.md提供完整引导。开发源码保持Git管理，不自升级。普通业务CLI入口限时检查latest并缓存24小时，默认仅提示；`PRODUCT_REFERENCE_REPLACEMENT_UPDATE_CHECK=0`关闭，`PRODUCT_REFERENCE_REPLACEMENT_STATE_DIR`可指定外部状态目录。版本、帮助、状态轮询不访问更新网络。
 
 # 本地工具合同
 

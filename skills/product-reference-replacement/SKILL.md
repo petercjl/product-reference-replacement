@@ -30,7 +30,7 @@ description: 制作可复用的16:9产品资产图并与用户沟通定稿，或
 
 ## 执行准备与按需知识
 
-从当前宿主加载 [能力合同](capabilities.json) 和匹配的 [Codex](adapters/codex.json)、[SealSeek](adapters/sealseek.json) 或 [通用适配](adapters/generic.json)。使用宿主广告的看图能力，不能以文件存在或OCR替代实际视觉检查。
+从当前宿主加载 [能力合同](capabilities.json) 与 [通用适配](adapters/generic.json)，根据宿主实际提供的能力执行。使用宿主广告的看图能力，不能以文件存在或OCR替代实际视觉检查。
 
 运行前解析本Skill的规范位置：链接取真实目录，托管副本从安装标记的source回到规范目录并读取其完整SKILL。若规范目录位于拥有本Skill的包的skills下，使用该包根目录的 `node <包根>/bin/product-reference-replacement.mjs` 执行下文命令；使用PATH入口时先确认其skill source与规范目录一致。这样同版本开发预览和已发布包可并存，避免新Skill误调旧CLI。
 

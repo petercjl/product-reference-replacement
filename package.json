@@ -10,7 +10,6 @@
     "bin",
     "src",
     "skills/product-reference-replacement/SKILL.md",
-    "skills/product-reference-replacement/agents",
     "skills/product-reference-replacement/adapters",
     "skills/product-reference-replacement/assets",
     "skills/product-reference-replacement/references",
@@ -20,7 +19,9 @@
     "capabilities.json",
     "skill-integrity.json",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "INSTALL.md",
+    "UPDATE.md"
   ],
   "engines": {
     "node": ">=22"
@@ -36,7 +37,8 @@
   },
   "scripts": {
     "test": "node --test test/*.test.mjs",
-    "check": "node --check bin/product-reference-replacement.mjs && npm test"
+    "check": "node --check bin/product-reference-replacement.mjs && npm test",
+    "postinstall": "node bin/install-notice.mjs"
   },
   "dependencies": {
     "sharp": "0.35.5"

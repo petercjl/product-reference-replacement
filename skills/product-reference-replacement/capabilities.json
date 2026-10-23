@@ -3,8 +3,6 @@
   "schema_version": "1.0.0",
   "skill": "product-reference-replacement",
   "target_platforms": [
-    "codex",
-    "sealseek",
     "generic"
   ],
   "capabilities": [
@@ -222,7 +220,7 @@
   },
   "host_resolution": {
     "fallback_adapter": "generic",
-    "custom_destination": "Caller resolves its own Skill directory and supplies --target-directory."
+    "target_directory": "Resolved explicitly by the calling host; no named-host directory defaults."
   },
   "image_generation_route": {
     "package": "@petercjl/sealseek-media-cli",

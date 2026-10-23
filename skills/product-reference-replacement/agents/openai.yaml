@@ -1,4 +1,0 @@
-interface:
-  display_name: "产品视觉资产与场景替换"
-  short_description: "制作可复用的产品资产图，沟通定稿后替换单张或明确指定的一组图片"
-  default_prompt: "使用 $product-reference-replacement，制作产品资产图，或用已有资产图替换图片中的产品。"

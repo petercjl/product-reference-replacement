@@ -361,7 +361,8 @@
           "type": "string"
         },
         "--target-directory": {
-          "type": "string"
+          "type": "string",
+          "required": true
         },
         "--json": {
           "type": "boolean"
@@ -378,7 +379,8 @@
           "type": "string"
         },
         "--target-directory": {
-          "type": "string"
+          "type": "string",
+          "required": true
         },
         "--mode": {
           "type": "string"
@@ -401,7 +403,8 @@
           "type": "string"
         },
         "--target-directory": {
-          "type": "string"
+          "type": "string",
+          "required": true
         },
         "--mode": {
           "type": "string"
@@ -438,6 +441,16 @@
         },
         "--yes": {
           "type": "boolean"
+        },
+        "--target-directory": {
+          "type": "string",
+          "required": true
+        },
+        "--agent": {
+          "type": "string"
+        },
+        "--mode": {
+          "type": "string"
         }
       },
       "sideEffects": "package-and-skill-update"
@@ -456,9 +469,8 @@
     "channel": "latest"
   },
   "platforms": {
-    "codex_macos": "local scripts tested; full Agent generation untested",
-    "sealseek_macos": "implemented; full host flow untested",
-    "windows": "implemented; CI verification required"
+    "host": "Any Agent satisfying declared capabilities; actual host discovery is verified by that host.",
+    "os": "Node.js 22+; package tests run on macOS and Windows; host runtime evidence separate."
   },
   "boundary": "Application Skill owns visual choices and acceptance; package executes local deterministic work. Generation uses dynamically resolved sealseek-media.",
   "image_generation_route": {
@@ -470,5 +482,22 @@
     "native_image_generation_allowed": false,
     "direct_api_fallback_allowed": false,
     "dependency_failure": "Preserve task ID and report CAPABILITY_UNAVAILABLE or FEATURE_UNSUPPORTED; do not switch routes."
+  },
+  "installationLifecycle": {
+    "agentNeutral": true,
+    "skillRequired": true,
+    "updateRequiresSkillSync": true,
+    "required_components": [
+      "cli",
+      "skill"
+    ],
+    "targetRequired": true,
+    "hostRegistrationRequired": true,
+    "installGuide": "INSTALL.md",
+    "updateGuide": "UPDATE.md",
+    "install": "Read INSTALL.md, resolve the current host destination and registration mechanism; skill install --target-directory ABSOLUTE_SKILL_DIR; verify host discovery.",
+    "update": "Read UPDATE.md; update install --target-directory ABSOLUTE_SKILL_DIR --yes; sync even at same version; refresh current host.",
+    "verification": "Real CLI version plus managed/up_to_date canonical Skill hashes and host-verified discovery/load. File synchronization reports host-registration-pending.",
+    "hostDirectoryDefaults": false
   }
 }
