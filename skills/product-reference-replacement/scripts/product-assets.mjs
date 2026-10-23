@@ -2,7 +2,7 @@
 import path from 'node:path';
 import fs from 'node:fs/promises';
 import {spawnSync} from 'node:child_process';
-import {pathToFileURL} from 'node:url';
+import {fileURLToPath} from 'node:url';
 import {ROOT,check,read} from './common.mjs';
 export const commands={
  'board plan':{required:['plan','output-directory'],optional:[],side_effect:'local-write'},
@@ -40,4 +40,6 @@ export async function main(argv){const pos=[],o={};for(let k=0;k<argv.length;k++
  if(key==='blueprint record')return (await import('./blueprint.mjs')).recordBlueprint(args);
  const api=await import('./jobs.mjs'),fn={'job create':'createJob','job status':'jobStatus','job collect':'collectJob','round prepare':'prepareRound','round attach':'attachTask','round review':'reviewRound'}[key];return api[fn](args);
 }
-if(process.argv[1]&&import.meta.url===pathToFileURL(await fs.realpath(path.resolve(process.argv[1]))).href){try{const r=await main(process.argv.slice(2));console.log(JSON.stringify(r,null,2));if(r.ok===false)process.exitCode=1;}catch(e){console.log(JSON.stringify({ok:false,error:{code:e.code??'EXECUTION_FAILED',message:e.message}},null,2));process.exitCode=1;}}
+const entryPath=process.argv[1]?await fs.realpath(path.resolve(process.argv[1])).catch(()=>null):null;
+const modulePath=await fs.realpath(fileURLToPath(import.meta.url));
+if(entryPath&&(process.platform==='win32'?entryPath.toLowerCase()===modulePath.toLowerCase():entryPath===modulePath)){try{const r=await main(process.argv.slice(2));console.log(JSON.stringify(r,null,2));if(r.ok===false)process.exitCode=1;}catch(e){console.log(JSON.stringify({ok:false,error:{code:e.code??'EXECUTION_FAILED',message:e.message}},null,2));process.exitCode=1;}}

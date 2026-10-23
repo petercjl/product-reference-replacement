@@ -13,6 +13,7 @@ export async function releaseMetadata(root,{write=false}={}){
  if(Object.keys({...expected,...hashes}).some(k=>expected[k]!==hashes[k]))throw Error('RELEASE_SKILL_INTEGRITY_MISMATCH');
  return {ok:true,version:outer.version,skill_version:inner.version,files:Object.keys(hashes).length};
 }
-if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
+const entryPath=process.argv[1]?await fs.realpath(path.resolve(process.argv[1])).catch(()=>null):null;const modulePath=await fs.realpath(fileURLToPath(import.meta.url));
+if(entryPath&&(process.platform==='win32'?entryPath.toLowerCase()===modulePath.toLowerCase():entryPath===modulePath)){
  try{const result=await releaseMetadata(path.resolve(import.meta.dirname,'..'),{write:process.argv.includes('--write')});if(!process.argv.includes('--quiet'))console.log(JSON.stringify(result));}catch(e){console.error(e.message);process.exitCode=1;}
 }
