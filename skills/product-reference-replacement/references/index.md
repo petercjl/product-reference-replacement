@@ -1,5 +1,7 @@
 # 方法索引
 
+- [跨图产品形态核对](queries/check-product-form.md)：A0先看全套输入；明显冲突先请用户指定原始基准，再进入选图和规划。
+
 - [制作或调整资产图](queries/make-board.md)：只给商品照片或完整详情页时，逐图理解、覆盖、分区与来源。
 - [已有资产替换图片](queries/replace-images.md)：角色与目标、几何接触、遮挡保护、可行性与蓝图绑定。
 - [资产沟通](topics/asset-review.md)：进入A2展示和反馈时才读。
