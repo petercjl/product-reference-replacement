@@ -8,6 +8,16 @@ export async function exists(p){try{return await fs.lstat(p);}catch(e){if(e.code
 export async function read(p){return JSON.parse(await fs.readFile(p,'utf8'));}
 export async function writeNew(p,data){check(!await exists(p),'OUTPUT_EXISTS',`Preserving existing file: ${p}`);await fs.mkdir(path.dirname(p),{recursive:true});await fs.writeFile(p,typeof data==='string'||Buffer.isBuffer(data)?data:JSON.stringify(data,null,2)+'\n',{flag:'wx'});}
 export async function freshDir(p){check(!await exists(p),'OUTPUT_EXISTS',`Preserving existing directory: ${p}`);await fs.mkdir(p,{recursive:false});}
+export async function preflightOutputDirectory(p){
+ check(typeof p==='string'&&p.length>0,'INVALID_INPUT','A new output directory is required.');
+ check(!await exists(p),'OUTPUT_EXISTS',`Preserving existing directory: ${p}`);
+ const parent=path.dirname(path.resolve(p)),s=await fs.stat(parent).catch(error=>{if(error.code==='ENOENT')return null;throw error;});
+ check(s?.isDirectory(),'OUTPUT_PARENT_MISSING',`Create the output parent directory before retrying: ${parent}`);
+}
+export function reviewFields(value,fields,template){
+ const missing=fields.filter(k=>!Object.hasOwn(value??{},k));
+ if(missing.length)throw Object.assign(new Error(`Missing visual review fields: ${missing.join(', ')}. Fill review_template after inspecting the actual image.`),{code:'REVIEW_FIELDS_REQUIRED',details:{missing_fields:missing,review_template:template}});
+}
 export async function identity(p){const s=await fs.stat(p);check(s.isFile()&&s.size>0,'INVALID_IMAGE','Expected a nonempty local file.');return {path:path.resolve(p),bytes:s.size,sha256:hash(await fs.readFile(p))};}
 export async function unchanged(ref){const actual=await identity(ref.path);check(actual.sha256===ref.sha256,'REFERENCE_CHANGED',`Reference content changed: ${ref.path}`);return actual;}
 export const resolve=(base,p)=>{check(typeof p==='string'&&p.length>0,'INVALID_INPUT','A local path is required.');return path.resolve(base,p);};

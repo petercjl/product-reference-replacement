@@ -1,13 +1,14 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import sharp from 'sharp';
-import {ROOT,check,read,writeNew,freshDir,identity,integer,safeId,escapeText,resolve,hash,unchanged,knownFields} from './common.mjs';
+import {ROOT,check,read,writeNew,freshDir,identity,integer,safeId,escapeText,resolve,hash,unchanged,knownFields,preflightOutputDirectory,reviewFields} from './common.mjs';
 import {denseLayout,metrics,TEMPLATES} from './board-layout.mjs';
 export const FONT=path.join(ROOT,'assets/fonts/NotoSansCJKsc-Regular.otf');
 process.env.FONTCONFIG_FILE??=path.join(ROOT,'assets/fonts/fonts.conf');
 export async function imageInfo(p){const m=await sharp(p,{failOn:'error'}).metadata();check(!m.pages||m.pages===1,'INVALID_IMAGE','Static images are required.');return {width:m.autoOrient?.width??([5,6,7,8].includes(m.orientation)?m.height:m.width),height:m.autoOrient?.height??([5,6,7,8].includes(m.orientation)?m.width:m.height),format:m.format};}
 export async function label(text,width,height){check(typeof text==='string'&&text.trim().length>0&&text.length<=100,'INVALID_LABEL','Expected a short panel label.');return sharp({text:{text:escapeText(text),font:'Noto Sans CJK SC',fontfile:FONT,width,height,rgba:true,align:'left',wrap:'word-char'}}).png().toBuffer();}
 export async function renderBoard({planFile,outputDirectory}){
+ await preflightOutputDirectory(outputDirectory);
  const plan=await read(planFile),base=path.dirname(path.resolve(planFile)),W=plan.width??3840,H=plan.height??2160;
  knownFields(plan,['product_id','variant','width','height','padding','label_height','panels','layout','template_id']);
  check(plan.layout===undefined||['manual','dense'].includes(plan.layout),'INVALID_PLAN','layout is manual or dense.');
@@ -73,7 +74,8 @@ export async function checkBoard({boardDirectory,reviewFile}){
  const g=metrics(m.panels,W,H,m.padding??plan.padding??Math.max(8,Math.round(W/240)),m.label_height??plan.label_height??Math.max(20,Math.round(H/22)));
  const missing=['overall','scale'].filter(role=>!m.panels.some(p=>p.role===role));
  const technical=g.photo_area_fraction>=.9&&missing.length===0;
+ const template={inspected:false,artifact_sha256:m.board.sha256,labels_match:false,identity_match:false,reference_clear:false,role_verdicts:Object.fromEntries([...new Set(m.panels.map(p=>p.role))].map(role=>[role,'UNCERTAIN'])),previews:[1600,1920].map(width=>({width,inspected:false,readable:false})),evidence:''};
  let visual=false;
- if(reviewFile){const v=await read(reviewFile);check(v.artifact_sha256===m.board.sha256,'REVIEW_MISMATCH','Visual review must name this exact board hash.');visual=[1600,1920].every(w=>m.previews?.some(p=>p.width===w))&&v.inspected===true&&v.labels_match===true&&v.identity_match===true&&v.reference_clear===true&&['overall','scale'].every(r=>v.role_verdicts?.[r]==='PASS')&&m.panels.every(p=>v.role_verdicts?.[p.role]==='PASS')&&[1600,1920].every(w=>v.previews?.some(p=>p.width===w&&p.inspected===true&&p.readable===true))&&typeof v.evidence==='string'&&v.evidence.trim().length>0;}
- return {ok:true,board:m.board,geometry:g,missing_roles:missing,technical_pass:technical,visual_pass:visual,ready_for_user:technical&&visual,status:!technical?'needs-input':visual?'ready-for-user':'needs-review',next_action:!technical?'Adjust selected evidence/layout; preserve all complete product/reference regions.':visual?'Show the actual board image and wait for real user satisfaction.':'Inspect the board, roles and 1600/1920-wide previews, then supply the visual review.'};
+ if(reviewFile){const v=await read(reviewFile);reviewFields(v,Object.keys(template),template);check(v.artifact_sha256===m.board.sha256,'REVIEW_MISMATCH','artifact_sha256 differs from the verified board. Run board check without --review for its current review_template.');visual=[1600,1920].every(w=>m.previews?.some(p=>p.width===w))&&v.inspected===true&&v.labels_match===true&&v.identity_match===true&&v.reference_clear===true&&['overall','scale'].every(r=>v.role_verdicts?.[r]==='PASS')&&m.panels.every(p=>v.role_verdicts?.[p.role]==='PASS')&&[1600,1920].every(w=>v.previews?.some(p=>p.width===w&&p.inspected===true&&p.readable===true))&&typeof v.evidence==='string'&&v.evidence.trim().length>0;}
+ return {ok:true,board:m.board,geometry:g,missing_roles:missing,technical_pass:technical,visual_pass:visual,ready_for_user:technical&&visual,status:!technical?'needs-input':visual?'ready-for-user':'needs-review',review_template:template,next_action:!technical?'Adjust selected evidence/layout; preserve all complete product/reference regions.':visual?'Show the actual board image and wait for real user satisfaction.':'Inspect the board, roles and 1600/1920-wide previews, then fill review_template with real visual judgments; preserve its artifact_sha256.'};
 }

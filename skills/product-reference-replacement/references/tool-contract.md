@@ -122,7 +122,7 @@ confidence为clear/ambiguous；contact.mode为held/supported/worn/none/other，m
 
 输出包含1600/1920宽previews、照片面积覆盖率、contain补白、标签面积、有效源像素。所有实际原件及历史保持。`board-plan.json`保存解析后的manual格位，可复现相同排版。照片覆盖≥90%且overall/scale齐全才technical_pass；照片自身背景仍算照片面积，需实际检查商品占比。
 
-`board check --board-directory DIR [--review REVIEW.json]`为只读检查，验证板、裁片、源图和预览hash，重新计算几何指标。首次不带review返回needs-review或needs-input；看图后写：
+`board check --board-directory DIR [--review REVIEW.json]`为只读检查，验证板、裁片、源图和预览hash，重新计算几何指标。首次不带review返回needs-review或needs-input及`review_template`，其中真实artifact_sha256、角色键和预览宽度由CLI填入。模板保持inspected:false及未确认判定；实际看图后填写视觉字段、证据和预览判定，原样保留哈希。字段缺失返回REVIEW_FIELDS_REQUIRED与missing_fields及模板，真实哈希不同单独返回REVIEW_MISMATCH。示例：
 
 ```json
 {"inspected":true,"artifact_sha256":"本板sha256","labels_match":true,"identity_match":true,"reference_clear":true,"role_verdicts":{"overall":"PASS","scale":"PASS","texture":"PASS"},"previews":[{"width":1600,"inspected":true,"readable":true},{"width":1920,"inspected":true,"readable":true}],"evidence":"逐格对照真实参考的检查依据"}
@@ -135,12 +135,13 @@ role_verdicts须覆盖该板全部角色。通过为ready-for-user，含义仅�
 
 新建模式A使用以下本地命令；这些命令不上传或生成，只有Agent经媒体Skill实际submit才产生外部生成。
 
-- `board plan --plan PLAN.json --output-directory NEW_PROJECT`：验证并锁定格数/尺寸/box/参考。计划顶层字段product_id、variant、template_id、width/height（16:9）、padding、label_height、panels、authorization。authorization记录真实confirmed、evidence及max_requests（≥n的总请求预算）；未授权仍能本地计划，prepare会拒绝。生成前将真实授权纳入正式项目计划。
+- `board plan --plan PLAN.json --output-directory NEW_PROJECT`：验证并锁定格数/尺寸/box/参考。计划顶层字段product_id、variant、template_id、width/height（16:9）、padding、label_height、panels、authorization及可选layout_candidates。authorization记录真实confirmed、evidence及max_requests（≥n的总请求预算）；未授权仍能本地计划，prepare会拒绝。生成前将真实授权纳入正式项目计划。
 - panels每项：id、label（≤24字）、role、intent、width/height（原件最低像素目标）、ratio、resolution（1K/2K/4K）、references（有序原始文件路径）、evidence（inspected/note），可选box。全部不填box时按目标比例计算一次，全部填时保留原box。必须有overall/scale，2–8格，照片矩形覆盖≥90%。选受支持比例且足够大的原件；精确像素不是服务参数。
+- 可选顶层`layout_candidates`按优先顺序提供至多15个比例备选，加主计划最多16次。每项为`{"panels":[{"id":"p1","width":1536,"height":2048,"ratio":"3:4"}, ...]}`，须恰好覆盖原有全部panel_id，只调整目标宽高和比例；职责、参考、提示意图和分辨率档位沿用主计划。全部候选先校验，随后按顺序调用有界布局，首个满足技术门槛即锁定；显式box与候选互斥。`layout_search`返回attempts、limit、selected_candidate和stop_condition，失败也保留尝试原因。
 - `board status --project PROJECT`：各格状态、选中版本、任务、预留请求量及预算。
 - `panel prepare --project PROJECT --panel-id ID --prompt-file PROMPT [--reason TEXT]`：全项目最多一个未验收活动任务；始终count=1，原始references锁hash。下一revision必须给定本格修改原因及不同完整提示词。返回dry_run_args、submit_args和round_directory；从未提交的reserved也算预留，未知提交先查媒体历史。
-- `panel attach --project PROJECT --panel-id ID --task-json TASK`：媒体summary要求task_id、model:nano-banana-pro、requested_count:1；终态succeeded/partial需要actual_count:1和唯一artifacts路径，位于该revision的generated目录。后续attach限定相同ID，所有panel/revision之间拒绝复用任务。
+- `panel attach --project PROJECT --panel-id ID --task-json TASK`：媒体summary要求task_id、model:nano-banana-pro、requested_count:1；终态succeeded/partial需要actual_count:1和唯一artifacts路径，位于该revision的generated目录。后续attach限定相同ID，所有panel/revision之间拒绝复用任务。成功attach额外返回带实际原件hash的review_template；模板默认inspected:false和UNCERTAIN，Agent实际看图后填判断/证据，保留artifact_sha256。
 - `panel review --project PROJECT --panel-id ID --review REVIEW`：实际单图视觉记录含inspected:true、artifact_sha256、identity/role/clarity（PASS/FAIL/UNCERTAIN）、evidence、issues。全PASS要求issues为空，实际原件宽高≥目标且比例误差≤1%；失败/不确定须有定位问题。脚本只验证记录，不代替视觉判断。
-- `board compose --project PROJECT --output-directory NEW_VERSION`：全部最新格通过才合成；固定box不重排，复制n张通过原件到images，整板/预览到board，composition.json保存每格revision、文件hash、参考、提示词、任务/费用及验收。进入board check时board-directory传NEW_VERSION/board。
+- `board compose --project PROJECT --output-directory NEW_VERSION`：全部最新格通过才合成；固定box不重排，复制n张通过原件到images，整板/预览到board，composition.json保存每格revision、文件hash、参考、提示词、任务/费用及验收。进入board check时board-directory传NEW_VERSION/board。合成与render开始先检查新输出目录和已存在的父目录；父目录缺失返回OUTPUT_PARENT_MISSING及应创建的位置。
 
 局部修订保留原PROJECT，目标格再次prepare/attach/review后compose到新目录；其余格引用相同原件、标签及box。任何修改格数/格位/目标尺寸的请求先建新计划并明确影响范围。旧版本目录排他保留；新整板等待新视觉验收和真实用户定稿。A无固定4轮上限，受请求预算和实际授权限制；B规则保持独立。已attach为failed且无图片时，panel review可使用{recovery_confirmed:true,task_id,evidence}记录诊断后确认的终态失败，原预留请求保持计数；下一次prepare仍需修改原因、新提示词和剩余授权预算。uncertain和download_failed继续恢复同任务，不能以此分支关闭。

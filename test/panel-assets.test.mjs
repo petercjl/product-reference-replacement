@@ -17,3 +17,26 @@ test('composition verifies selected original integrity',async t=>{const x=await 
 
 test('failed visual revision preserves old selection; total budget bounds revisions',async t=>{const x=await setup(t);for(const id of ['p0','p1','p2','p3'])await finish(x,id,await prepare(x,id));const old=(await panelStatus(x)).panels[0].selected.sha256;await finish(x,'p0',await prepare(x,'p0','feedback'),'#113355',{}, {identity:'FAIL',issues:['synthetic localized identity failure']});const status=(await panelStatus(x)).panels[0];assert.equal(status.status,'needs-revision');assert.equal(status.selected.sha256,old);await assert.rejects(composePanels({...x,outputDirectory:path.join(x.d,'bad-revision')}),{code:'PANELS_INCOMPLETE'});for(let k=0;k<3;k++)await finish(x,'p0',await prepare(x,'p0','change-'+k),'#114455');assert.equal((await panelStatus(x)).requests_reserved,8);await assert.rejects(prepare(x,'p0','one-more'),{code:'BUDGET_EXHAUSTED'});});
 test('terminal diagnosed failure retains spent reservation; uncertain submission remains blocked',async t=>{const x=await setup(t);await prepare(x,'p0');const taskFile=path.join(x.d,'failed.json');await writeNew(taskFile,{task_id:'failed-same-task',model:'nano-banana-pro',requested_count:1,status:'failed'});await attachPanel({...x,panelId:'p0',taskFile});const reviewFile=path.join(x.d,'recovery.json');await writeNew(reviewFile,{recovery_confirmed:true,task_id:'failed-same-task',evidence:'synthetic terminal diagnosis'});await reviewPanel({...x,panelId:'p0',reviewFile});assert.equal((await panelStatus(x)).requests_reserved,1);await prepare(x,'p0','diagnosed-new-request');const uncertain=path.join(x.d,'uncertain.json');await writeNew(uncertain,{task_id:'uncertain-same',model:'nano-banana-pro',requested_count:1,status:'uncertain'});await attachPanel({...x,panelId:'p0',taskFile:uncertain});await assert.rejects(reviewPanel({...x,panelId:'p0',reviewFile}),{code:'PANEL_NOT_READY'});await assert.rejects(prepare(x,'p1'),{code:'ACTIVE_PANEL'});});
+
+test('attached originals provide exact unapproved review templates and preserve the review gate',async t=>{
+ const x=await setup(t),r=await prepare(x,'p0'),gen=path.join(r.round_directory,'generated');await fs.mkdir(gen);
+ const image=path.join(gen,'result.png');await sharp({create:{width:1024,height:576,channels:3,background:'#445566'}}).png().toFile(image);
+ const taskFile=path.join(x.d,'template-task.json');await writeNew(taskFile,{task_id:'template',model:'nano-banana-pro',requested_count:1,actual_count:1,status:'succeeded',artifacts:[{path:image}]});
+ const result=await attachPanel({...x,panelId:'p0',taskFile});assert.equal(result.review_template.artifact_sha256,(await identity(image)).sha256);assert.equal(result.review_template.inspected,false);
+ const reviewFile=path.join(x.d,'template-review.json');await writeNew(reviewFile,result.review_template);
+ await assert.rejects(reviewPanel({...x,panelId:'p0',reviewFile}),{code:'REVIEW_REQUIRED'});assert.equal((await panelStatus(x)).panels[0].status,'awaiting-review');
+});
+test('ordered caller candidates stop at the first feasible layout and reject malformed alternatives before writes',async t=>{
+ const x=await setup(t),p=structuredClone(x.plan);p.panels.forEach(i=>{delete i.box;i.width=1400;i.height=600;i.ratio='21:9';});
+ const alternative={panels:p.panels.map(i=>({id:i.id,width:1024,height:576,ratio:'16:9'}))};p.layout_candidates=[alternative,alternative];
+ const f=path.join(x.d,'alternatives.json');await writeNew(f,p);const out=path.join(x.d,'alternatives');const result=await planPanels({planFile:f,outputDirectory:out});
+ assert.equal(result.layout_search.selected_candidate,1);assert.equal(result.layout_search.attempts.length,2);assert.equal(result.layout_search.limit,3);assert.equal(result.layout_search.stop_condition,'first-feasible');
+ assert.equal((await panelStatus({projectDirectory:out})).requests_reserved,0);assert.ok(result.geometry.photo_area_fraction>=.9);
+ const fixed=JSON.parse(await fs.readFile(path.join(out,'project.json'),'utf8'));assert.deepEqual(fixed.panels.map(i=>i.references),JSON.parse(await fs.readFile(path.join(x.projectDirectory,'project.json'),'utf8')).panels.map(i=>i.references));
+ for(const kind of ['limit','duplicate','semantic','explicit']){const bad=structuredClone(p);if(kind==='limit')bad.layout_candidates=Array(16).fill(alternative);if(kind==='duplicate')bad.layout_candidates[0].panels[1].id='p0';if(kind==='semantic')bad.layout_candidates[0].panels[0].role='invented';if(kind==='explicit')bad.panels=x.plan.panels;const file=path.join(x.d,kind+'.json');await writeNew(file,bad);const output=path.join(x.d,kind);await assert.rejects(planPanels({planFile:file,outputDirectory:output}));await assert.rejects(fs.stat(output),{code:'ENOENT'});}
+});
+test('composition checks the output parent before touching selected images',async t=>{
+ const x=await setup(t);const output=path.join(x.d,'missing-parent','v1');
+ await assert.rejects(composePanels({...x,outputDirectory:output}),{code:'OUTPUT_PARENT_MISSING'});
+ await assert.rejects(fs.stat(path.dirname(output)),{code:'ENOENT'});assert.equal((await panelStatus(x)).requests_reserved,0);
+});
