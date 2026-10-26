@@ -11,6 +11,9 @@ export async function materializeRuntime(stage){
  }
  try{execute('npm',['install','--prefix',runtime,'--ignore-scripts','--omit=dev','--no-audit','--no-fund','--prefer-offline','--dry-run=false','--json=false']);}
  catch(error){error.code='RUNTIME_INSTALL_FAILED';throw error;}
+ // Runtime dependencies are private to this target. npm's generated command
+ // shims are not used by this runtime; omit their links from the physical copy.
+ await fs.rm(path.join(runtime,'node_modules','.bin'),{recursive:true,force:true});
  if(!await verifyRuntime(stage,pkg.version))fail('RUNTIME_VERIFY_FAILED','Isolated runtime failed dependency/version verification.');
  return {entry:'.runtime/bin/product-reference-replacement.mjs',version:pkg.version};
 }
