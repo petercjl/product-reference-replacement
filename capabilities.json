@@ -1,5 +1,37 @@
 {
   "commandContracts": {
+    "reference prepare": {
+      "options": {
+        "--plan": {
+          "type": "string",
+          "required": true
+        },
+        "--output-directory": {
+          "type": "string",
+          "required": true
+        },
+        "--json": {
+          "type": "boolean"
+        }
+      },
+      "sideEffects": "local-write"
+    },
+    "reference check": {
+      "options": {
+        "--reference-record": {
+          "type": "string",
+          "required": true
+        },
+        "--review": {
+          "type": "string",
+          "required": false
+        },
+        "--json": {
+          "type": "boolean"
+        }
+      },
+      "sideEffects": "none"
+    },
     "board plan": {
       "options": {
         "--plan": {
@@ -422,6 +454,9 @@
       "options": {
         "--json": {
           "type": "boolean"
+        },
+        "--target-directory": {
+          "type": "string"
         }
       },
       "sideEffects": "none"
@@ -461,7 +496,7 @@
     "intervalHours": 24,
     "timeoutMs": 1500,
     "defaultMode": "notify",
-    "trigger": "Successful board render, asset import/freeze, job create or round prepare via package CLI. Polling/version/help remain offline.",
+    "trigger": "Successful reference prepare, board plan/compose/render, panel prepare, asset import/freeze, job create or round prepare via package CLI. Polling/version/help remain offline.",
     "configuration": "PRODUCT_REFERENCE_REPLACEMENT_STATE_DIR optional user state directory; update status shows policy.",
     "disable": "PRODUCT_REFERENCE_REPLACEMENT_UPDATE_CHECK=0",
     "recovery": "Offline results cached for 24h; exclusive lock; preserve malformed user cache.",

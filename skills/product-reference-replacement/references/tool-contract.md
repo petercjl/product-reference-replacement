@@ -14,6 +14,43 @@
 
 源图crop按EXIF归正后像素坐标定义，left/top为左上角。需坐标辅助时调用已安装稳定图片检查工具或宿主看图能力，不能猜轮廓。来源图片与标签属于数据，文本做转义。
 
+## reference prepare / check：原始照片参考
+
+`reference prepare --plan PLAN.json --output-directory NEW_DIR`
+
+```json
+{
+  "source":"original-page.png", "source_kind":"page",
+  "crop":{"left":30,"top":60,"width":700,"height":740},
+  "protected_regions":[
+    {"kind":"product","left":100,"top":100,"width":550,"height":450},
+    {"kind":"person","left":150,"top":280,"width":420,"height":500},
+    {"kind":"contact","left":170,"top":300,"width":360,"height":120}
+  ],
+  "evidence":{"inspected":true,"note":"实际照片区、必要保留范围及本格职责的看图依据"}
+}
+```
+
+source_kind为photo/page。page须显式crop；photo省略crop表示完整原图。区域坐标按EXIF归正原像素，kind为product/person/contact/scale_reference/scene/detail，至少一处。坐标仅是字段示例，必须看本次原图确定；商品、人和必要接触区必须在裁切内。输出reference.png（原生像素裁切，无放大/补边）、source-preview.png（红框裁切、绿框保护区域的检查预览）和reference.json（原始来源、裁切、保护区、hash及比例适配建议）。原图保持不变，纯照片也不强制改变构图。
+
+`reference check --reference-record NEW_DIR/reference.json` 返回待填review_template。实际查看原图、坐标预览和裁切后保存新review，再执行：
+
+`reference check --reference-record NEW_DIR/reference.json --review REVIEW.json`
+
+```json
+{"inspected":true,"source_sha256":"命令模板中的原图hash","reference_sha256":"命令模板中的照片hash","photo_only":true,"retained_evidence":true,"evidence":"实际比较边界、商品/人物完整性和接触关系；确认不存在页面装饰迁入"}
+```
+
+未填、hash不符、原图/准备图变化或未确认照片区和证据保留时不能用于board plan。脚本不自动识别内容；safe crop不存在时说明缺口或换素材，不能虚构通过。比例建议为几何信息，实际选择仍由照片证据、本格用途、固定格位与实时媒体合同共同决定。
+
+board plan每格references保留原图路径形式，也可显式引用准备记录：
+
+```json
+[{"prepared":"refs/photo/reference.json","review":"refs/photo-review.json"},"original-product-photo.png"]
+```
+
+顺序仍由应用确定。引用相对计划文件解析，只有reference.png作为对应一张参考发送给媒体；原图、回执和review哈希随project/request传递。来源或回执变化先重新核对，不能凭新文件名绕过原证据。旧项目和纯照片路径保持兼容。该命令只处理生成前原始参考，不能用于修改生成结果后冒充原件尺寸达标。
+
 ## board render
 
 `board render --plan PLAN.json --output-directory NEW_DIR`
@@ -145,3 +182,11 @@ role_verdicts须覆盖该板全部角色。通过为ready-for-user，含义仅�
 - `board compose --project PROJECT --output-directory NEW_VERSION`：全部最新格通过才合成；固定box不重排，复制n张通过原件到images，整板/预览到board，composition.json保存每格revision、文件hash、参考、提示词、任务/费用及验收。进入board check时board-directory传NEW_VERSION/board。合成与render开始先检查新输出目录和已存在的父目录；父目录缺失返回OUTPUT_PARENT_MISSING及应创建的位置。
 
 局部修订保留原PROJECT，目标格再次prepare/attach/review后compose到新目录；其余格引用相同原件、标签及box。任何修改格数/格位/目标尺寸的请求先建新计划并明确影响范围。旧版本目录排他保留；新整板等待新视觉验收和真实用户定稿。A无固定4轮上限，受请求预算和实际授权限制；B规则保持独立。已attach为failed且无图片时，panel review可使用{recovery_confirmed:true,task_id,evidence}记录诊断后确认的终态失败，原预留请求保持计数；下一次prepare仍需修改原因、新提示词和剩余授权预算。uncertain和download_failed继续恢复同任务，不能以此分支关闭。
+
+## 完整执行回执：panel prepare / round prepare
+
+两个 prepare 操作均在本轮目录持久保存 `execution.json`，并返回绝对路径 `execution_record`。回执 schema_version 为 `media-execution-1`，包含 command、base_args、dry_run_args、submit_args、request_record 和轮次/格子标识。接收者即使未保留 stdout，也可通过 execution_record 读取完整执行合同。
+
+选择回执中的 command 与 dry_run_args 或 submit_args，以参数数组原样交给进程执行器；参数顺序、路径和模式后缀由本包构造。request.json 的 args 与回执 base_args 仅是基础操作参数，不包含执行模式和 --json，不能假设存在 --json 再用索引插入标志。prepare 只准备本地记录，媒体能力负责认证、dry-run、提交及恢复。
+
+旧轮次缺少 execution.json 时，先检查原 request 和已保存媒体任务状态；缺少回执本身不授权重新 prepare、重置轮数或再次提交。未知提交结果仍恢复同一 task_id。

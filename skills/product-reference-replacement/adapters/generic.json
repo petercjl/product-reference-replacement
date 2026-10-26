@@ -45,11 +45,13 @@
         "sequential-panel-generation",
         "panel-revisions",
         "single-panel-recompose",
-        "n-originals-and-board"
+        "n-originals-and-board",
+        "photo-reference-preparation",
+        "source-crop-provenance"
       ],
       "implementation": {
         "kind": "script",
-        "instructions": "Resolve runtime_entry from the current physical Skill installation marker relative to that Skill directory; execute the target-owned CLI and dependencies. Provenance paths are not execution roots. Select generic plus one category template, preserve source regions, inspect actual board and 1600/1920 previews, and enforce the visual/geometry contract. Never infer user approval from technical success. For mode A use board plan/status, panel prepare/attach/review, then board compose; preserve fixed boxes and all other panel originals when revising one panel. Deliver n original images plus the board."
+        "instructions": "Resolve runtime_entry from the current physical Skill installation marker relative to that Skill directory; execute the target-owned CLI and dependencies. Provenance paths are not execution roots. Select generic plus one category template, preserve source regions, inspect actual board and 1600/1920 previews, and enforce the visual/geometry contract. Never infer user approval from technical success. For mode A use board plan/status, panel prepare/attach/review, then board compose; preserve fixed boxes and all other panel originals when revising one panel. Deliver n original images plus the board. Prepare decorated-page photo regions with reference prepare/check, preserve declared evidence at native crop size, and bind source/receipt/review hashes to panel references."
       }
     },
     {

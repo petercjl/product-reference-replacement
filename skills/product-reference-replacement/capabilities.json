@@ -86,7 +86,9 @@
         "sequential-panel-generation",
         "panel-revisions",
         "single-panel-recompose",
-        "n-originals-and-board"
+        "n-originals-and-board",
+        "photo-reference-preparation",
+        "source-crop-provenance"
       ],
       "input_fields": [
         "request"

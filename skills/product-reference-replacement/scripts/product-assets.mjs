@@ -5,6 +5,8 @@ import {spawnSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 import {ROOT,check,read} from './common.mjs';
 export const commands={
+ 'reference prepare':{required:['plan','output-directory'],optional:[],side_effect:'local-write'},
+ 'reference check':{required:['reference-record'],optional:['review'],side_effect:'read'},
  'board plan':{required:['plan','output-directory'],optional:[],side_effect:'local-write'},
  'board status':{required:['project'],optional:[],side_effect:'read'},
  'board compose':{required:['project','output-directory'],optional:[],side_effect:'local-write'},
@@ -32,7 +34,9 @@ export async function main(argv){const pos=[],o={};for(let k=0;k<argv.length;k++
  const key=pos.join(' ')||'help',contract=commands[key];check(contract,'UNKNOWN_COMMAND','Use help to discover supported commands.');for(const k of Object.keys(o))check([...contract.required,...contract.optional].includes(k),'UNKNOWN_OPTION',`Unsupported --${k} for ${key}.`);for(const k of contract.required)check(o[k],'INVALID_INPUT',`Missing --${k}.`);
  if(key==='help')return {ok:true,commands,paid_action:false,boundary:'These scripts never submit generation. The Agent inspects images and invokes the canonical media Skill separately.'};
  if(key==='version')return {ok:true,...await read(path.join(ROOT,'package.json'))};if(key==='capabilities')return {ok:true,...await read(path.join(ROOT,'capabilities.json')),command_contracts:commands};if(key==='doctor')return doctor();
- const args={projectDirectory:o.project,panelId:o['panel-id'],reason:o.reason,planFile:o.plan,outputDirectory:o['output-directory'],boardDirectory:o['board-directory'],image:o.image,record:o.record,reviewFile:o.review,job:o.job,imageId:o['image-id'],promptFile:o['prompt-file'],taskFile:o['task-json'],analysisFile:o.analysis,blueprintFile:o.blueprint};
+ const args={projectDirectory:o.project,panelId:o['panel-id'],reason:o.reason,planFile:o.plan,outputDirectory:o['output-directory'],boardDirectory:o['board-directory'],image:o.image,record:o.record,reviewFile:o.review,referenceFile:o['reference-record'],job:o.job,imageId:o['image-id'],promptFile:o['prompt-file'],taskFile:o['task-json'],analysisFile:o.analysis,blueprintFile:o.blueprint};
+ if(key==='reference prepare')return (await import('./reference-images.mjs')).prepareReference(args);
+ if(key==='reference check')return (await import('./reference-images.mjs')).checkReference(args);
  const panels={'board plan':'planPanels','board status':'panelStatus','board compose':'composePanels','panel prepare':'preparePanel','panel attach':'attachPanel','panel review':'reviewPanel'};if(panels[key])return (await import('./panel-assets.mjs'))[panels[key]](args);
  if(key==='board render')return (await import('./board.mjs')).renderBoard(args);
  if(key==='board check')return (await import('./board.mjs')).checkBoard(args);

@@ -5,6 +5,7 @@ import sharp from 'sharp';
 import {check,read,writeNew,freshDir,identity,unchanged,integer,safeId,resolve,hash,exists,locked,knownFields} from './common.mjs';
 import {imageInfo,label} from './board.mjs';
 import {checkBlueprint} from './blueprint.mjs';
+import {executionRecordPath,persistMediaExecution} from './media-execution.mjs';
 const PAD=n=>String(n).padStart(2,'0');
 const terminal=new Set(['succeeded','partial','failed','uncertain','download_failed']);
 async function manifest(job){const j=await read(path.join(job,'job.json'));check(j.schema_version==='1.0.0','INVALID_JOB','Unsupported job format.');return j;}
@@ -45,7 +46,8 @@ export async function prepareRound({job,imageId,promptFile,blueprintFile}){retur
  const args=['image','generate','--model',j.model,'--prompt',prompt,'--reference',i.source.path,'--reference',j.asset.board.path,'--ratio',ratio,'--resolution',j.resolution,'--count','1','--output',path.resolve(dir,'generated')];
  const r={round:n,image_id:imageId,prompt,prompt_sha256:hash(prompt),references:[i.source,j.asset.board],model:j.model,count:1,ratio,resolution:j.resolution,prepared_at:new Date().toISOString(),command:'sealseek-media',args,output:path.resolve(dir,'generated')};
  if(blueprint){r.blueprint=blueprint.identity;r.blueprint_snapshot_sha256=hash(JSON.stringify(blueprint.record,null,2)+'\n');}
- await fs.mkdir(path.dirname(dir),{recursive:true});await freshDir(dir);if(blueprint)await writeNew(path.join(dir,'edit-blueprint.json'),blueprint.record);await writeNew(path.join(dir,'request.json'),r);await writeNew(path.join(dir,'prompt.txt'),prompt+'\n');return {ok:true,request_only:true,paid_action:false,round:n,round_directory:path.resolve(dir),command:r.command,dry_run_args:[...args,'--dry-run','--json'],submit_args:[...args,'--via','sealseek','--submit','--json'],next_action:'Dry-run through the loaded media Skill, then submit once within authorization. Unknown outcome: inspect existing media history/task; do not prepare another round.'};
+ r.execution_record=executionRecordPath(dir);
+ await fs.mkdir(path.dirname(dir),{recursive:true});await freshDir(dir);if(blueprint)await writeNew(path.join(dir,'edit-blueprint.json'),blueprint.record);await writeNew(path.join(dir,'request.json'),r);await writeNew(path.join(dir,'prompt.txt'),prompt+'\n');return persistMediaExecution({directory:dir,args,context:{image_id:imageId,round:n,next_action:'Dry-run through the loaded media Skill, then submit once within authorization. Unknown outcome: inspect existing media history/task; do not prepare another round.'}});
 });}
 function closestRatio(value){return ['1:1','4:5','5:4','3:4','4:3','2:3','3:2','9:16','16:9','21:9'].sort((a,b)=>Math.abs(Math.log(value/(+a.split(':')[0]/+a.split(':')[1])))-Math.abs(Math.log(value/(+b.split(':')[0]/+b.split(':')[1]))))[0];}
 export async function attachTask({job,imageId,taskFile}){return locked(job,async()=>{

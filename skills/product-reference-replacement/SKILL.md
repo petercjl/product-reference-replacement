@@ -60,11 +60,13 @@ description: 制作可复用的16:9产品资产图并与用户沟通定稿，或
 
 确定同一款色/规格，建立“信息→源图/裁切→清晰度→是否上板”的证据表。外形、比例、可见组件关系、材质外观、纹理、标识和使用状态以原始商品证据为准，未见结构不补成事实。资产表达以商品自身为核心，不依赖某张待修改场景。
 
+先按 [照片参考准备](references/topics/reference-preparation.md) 区分详情页装饰与真实照片区。含外框、文字、灰底或拼图留白的来源，按实际看图坐标准备照片参考，核对商品、人物、接触和本格必要环境完整保留；纯照片可原样使用。用本包 `reference prepare/check` 保存原像素裁切、来源hash和实际看图review，计划用prepared/review引用绑定。安全照片区无法确定或裁切损失关键证据时留在A1处理，不把整页装饰默认交给模型去除。
+
 按模板的证据职责选择2–8格。生成前确定总画幅、每格内容与标签、固定box坐标/尺寸，以及对应独立图片的目标宽高、生成比例、分辨率档位和原始参考图。全貌与尺度优先分配足够面积；每张图只承担本格证据职责。先用 `board plan` 保存计划并核对≥90%照片矩形覆盖率。计划应列明n张初始生成及允许的总请求预算；需要追加费用范围时再由用户决定。尺寸是独立原图验收目标和合成尺寸，实际生成参数依当前模型ratio/resolution合同，不能把规划像素当作服务支持的精确输出参数。通过计划后才进入A2。详见 [逐格生成合同](references/topics/panel-generation.md)。
 
 ### A2 逐张生成与单图验收
 
-按 [逐格生成路线](references/queries/generate-panels.md) 加载生成方法及 [媒体依赖合同](references/dependencies.md)，动态读取当前sealseek-media规范Skill并核验所选nano-banana-pro能力。按计划顺序，每次用 `panel prepare` 准备一个格子的完整提示词，按规划中明确的素材职责输入参考。涉及人物/尺度/使用状态时，分别指定原人物场景素材与正确商品参考的职责。通常原人物场景素材在前；当用户明确要求校准产品几何时，可将正确全貌放在首位，人物场景图只控制其保留范围。商品结构、内外轮廓、曲率和比例由用户指定的正确商品参考决定，原素材中的人物、动作和场景由原图承载。已确认的生成全貌仅作为明确选定的商品辅助参考，人物和场景仍由原始素材承载。count=1；dry-run后在授权范围内submit一次，立即 `panel attach` 保存task_id，跟踪同一任务到终态并下载。上一张生成与实际看图验收结束后，再开始下一张；整板不交给模型一次绘制。
+按 [逐格生成路线](references/queries/generate-panels.md) 加载生成方法及 [媒体依赖合同](references/dependencies.md)，动态读取当前sealseek-media规范Skill并核验所选nano-banana-pro能力。按 [单图提示词编译](references/topics/panel-generation.md#单图提示词) 从参考职责、保留关系和必要修改编写本轮最终要求，识别笔记留在分析中。按计划顺序，每次用 `panel prepare` 准备一个格子的完整提示词，按规划中明确的素材职责输入参考。涉及人物/尺度/使用状态时，分别指定原人物场景素材与正确商品参考的职责。通常原人物场景素材在前；当用户明确要求校准产品几何时，可将正确全貌放在首位，人物场景图只控制其保留范围。商品结构、内外轮廓、曲率和比例由用户指定的正确商品参考决定，原素材中的人物、动作和场景由原图承载。已确认的生成全貌仅作为明确选定的商品辅助参考，人物和场景仍由原始素材承载。count=1；dry-run后在授权范围内submit一次，立即 `panel attach` 保存task_id，跟踪同一任务到终态并下载。上一张生成与实际看图验收结束后，再开始下一张；整板不交给模型一次绘制。
 
 逐张实际看高清原件，与A0确认的原始形态基准、原始主素材及商品参考分别比较：商品身份、应保留的人物身份/服装/动作/场景、该格职责、接触与尺度关系及清晰度，用 `panel review` 绑定原件hash记录identity/role/clarity。目标尺寸与比例须由实际原件满足；像素放大不能增加真实细节。PASS保留原件；FAIL或UNCERTAIN记录定位问题，调整本格完整提示词，在已授权请求预算内重新生成本格，仍使用原始商品证据。技术失败和未知提交结果按现有task_id恢复，付费请求不因重启而重新计数。模式A的局部沟通按用户范围和总预算推进；模式B仍有每图最多4轮。
 
@@ -104,7 +106,7 @@ A可以独立完成并结束。定稿后提醒：
 
 通过 [媒体依赖合同](references/dependencies.md) 动态加载当前 `sealseek-media` 的完整Skill；核验认证、实时模型 `nano-banana-pro`、两图参考、参数及单张输出。指定模型不可用时报告缺口，保持用户选择。
 
-使用 `round prepare --blueprint BLUEPRINT.json` 连同本轮完整提示词准备单轮请求；它只输出命令参数，不上传或生成。按媒体Skill先执行dry-run，再在授权范围内submit一次，立即将返回任务JSON用 `round attach` 绑定；持续跟踪同一task_id到终态，再attach最新结果。参数数组需由调用工具按数组或安全引用传递，不进行不安全shell插值。
+使用 `round prepare --blueprint BLUEPRINT.json` 连同本轮完整提示词准备单轮请求；它持久保存完整执行回执 execution.json 并返回 execution_record，不上传或生成。按回执原样使用 command 与 dry_run_args/submit_args；request.json 的 args 是不含模式标志的基础参数。按媒体Skill先执行dry-run，再在授权范围内submit一次，立即将返回任务JSON用 `round attach` 绑定；持续跟踪同一task_id到终态，再attach最新结果。参数数组需由调用工具按数组或安全引用传递，不进行不安全shell插值。
 
 实际查看结果全图和必要局部，分别比较产品身份与场景保持。用 `round review` 记录该结果hash、实际看图、product/scene/contact/occlusion/text五项检查、两道门判定与可定位证据；不适用项须说明理由。脚本不替Agent看图或生成质量结论。
 

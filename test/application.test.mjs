@@ -12,6 +12,14 @@ import {hash,writeNew} from '../skills/product-reference-replacement/scripts/com
 import {main} from '../skills/product-reference-replacement/scripts/product-assets.mjs';
 const require=createRequire(new URL('../skills/product-reference-replacement/package.json',import.meta.url));
 const sharp=require('sharp');
+test('round prepare persists its complete executable handoff without consuming another reservation',async t=>{
+ const a=await setup(t),result=await prepared(a),saved=JSON.parse(await fs.readFile(result.execution_record,'utf8'));
+ const request=JSON.parse(await fs.readFile(saved.request_record,'utf8'));
+ assert.deepEqual(saved,result);assert.equal(request.execution_record,result.execution_record);
+ assert.deepEqual(saved.base_args,request.args);assert.deepEqual(saved.dry_run_args,[...request.args,'--dry-run','--json']);
+ assert.deepEqual(saved.submit_args,[...request.args,'--via','sealseek','--submit','--json']);
+ assert.equal(request.args.includes('--json'),false);assert.equal((await jobStatus({job:a.job})).requests_reserved,1);
+});
 test('installed symlink entry executes the same canonical script',async t=>{const d=await tmp(t),link=path.join(d,'installed-skill');await fs.symlink(path.resolve('skills/product-reference-replacement'),link,process.platform==='win32'?'junction':'dir');const r=spawnSync(process.execPath,[path.join(link,'scripts/product-assets.mjs'),'version','--json'],{encoding:'utf8',timeout:10000});assert.equal(r.status,0,r.stderr);assert.equal(JSON.parse(r.stdout).version,JSON.parse(await fs.readFile(path.resolve('package.json'),'utf8')).version);});
 test('delivery retains reserved rounds even when no artifact exists',async t=>{const a=await setup(t);await prepared(a);const out=path.join(a.d,'incomplete-delivery');await collectJob({job:a.job,outputDirectory:out});const record=JSON.parse(await fs.readFile(path.join(out,'image-1','round-01-record.json'),'utf8'));assert.equal(record.request.round,1);assert.equal(record.task,null);assert.equal(record.review,null);});
 test('EXIF orientation is applied before crop coordinate validation',async t=>{const d=await tmp(t),src=path.join(d,'rotated.jpg');await writeNew(src,await sharp({create:{width:400,height:200,channels:3,background:'red'}}).jpeg().withMetadata({orientation:6}).toBuffer());const before=hash(await fs.readFile(src));assert.deepEqual(await imageInfo(src),{width:200,height:400,format:'jpeg'});const plan=await json(d,'oriented-plan.json',{product_id:'orientation',variant:'red',width:640,height:360,panels:[{id:'a',label:'全貌',role:'overall',source:src,box:{x:0,y:0,width:320,height:360}},{id:'b',label:'底部裁片',role:'detail',source:src,crop:{left:0,top:300,width:200,height:100},box:{x:320,y:0,width:320,height:360}}]});const r=await renderBoard({planFile:plan,outputDirectory:path.join(d,'board')});assert.deepEqual(await imageInfo(r.panels[1].crop_file),{width:200,height:100,format:'png'});assert.equal(hash(await fs.readFile(src)),before);});

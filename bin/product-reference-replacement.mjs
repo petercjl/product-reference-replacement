@@ -35,6 +35,6 @@ try {
   else result={ok:true,...await automaticUpdateCheck({now:Date.now(),env:{...process.env,PRODUCT_REFERENCE_REPLACEMENT_STATE_DIR:process.env.PRODUCT_REFERENCE_REPLACEMENT_STATE_DIR}})};
  } else if(argv[0]==='version'){await main(argv);result={ok:true,...await packageInfo()};}
  else if(argv[0]==='capabilities'){await main(argv);result={ok:true,...await readJSON(path.join(ROOT,'capabilities.json')),skill:await readJSON(path.join(SOURCE,'capabilities.json'))};}
- else {result=await main(argv);if(['board plan','board compose','panel prepare','board render','asset import','asset freeze','job create','round prepare'].includes(key))result.update_check=await automaticUpdateCheck();}
+ else {result=await main(argv);if(['reference prepare','board plan','board compose','panel prepare','board render','asset import','asset freeze','job create','round prepare'].includes(key))result.update_check=await automaticUpdateCheck();}
  console.log(JSON.stringify(result,null,2));if(result.ok===false)process.exitCode=1;
 }catch(e){console.error(JSON.stringify({ok:false,error:describeError(e)},null,2));process.exitCode=1;}
