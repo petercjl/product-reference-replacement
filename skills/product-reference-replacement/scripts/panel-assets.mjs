@@ -1,63 +1,39 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import {check,read,writeNew,freshDir,identity,unchanged,integer,safeId,resolve,hash,exists,locked,knownFields,preflightOutputDirectory,reviewFields} from './common.mjs';
+import {check,read,writeNew,freshDir,identity,unchanged,resolve,hash,exists,locked,preflightOutputDirectory,reviewFields} from './common.mjs';
 import {imageInfo,renderBoard} from './board.mjs';
-import {denseLayout,metrics,TEMPLATES} from './board-layout.mjs';
+import {metrics} from './board-layout.mjs';
+import {inspectPanelPlan} from './panel-plan.mjs';
 import {resolvePanelReference,unchangedPanelReference} from './reference-images.mjs';
 import {executionRecordPath,persistMediaExecution} from './media-execution.mjs';
 const pad=n=>String(n).padStart(4,'0');
-const RATIOS=['1:1','16:9','9:16','4:3','3:4','21:9','3:2','2:3','5:4','4:5'];
 const note=s=>typeof s==='string'&&s.trim().length>0;
 const panelReviewTemplate=a=>({inspected:false,artifact_sha256:a.sha256,identity:'UNCERTAIN',role:'UNCERTAIN',clarity:'UNCERTAIN',evidence:'',issues:[]});
 async function project(dir){const p=await read(path.join(dir,'project.json'));check(p.schema_version==='panel-assets-1','INVALID_PROJECT','Expected a planned single-panel generation project.');return p;}
 async function history(dir,id){const root=path.join(dir,'panels',id);if(!await exists(root))return [];const out=[];for(const name of (await fs.readdir(root)).filter(n=>/^revision-\d{4}$/.test(n)).sort()){const d=path.join(root,name),names=(await fs.readdir(d)).filter(n=>/^task-\d{4}\.json$/.test(n)).sort();out.push({directory:d,request:await read(path.join(d,'request.json')),task:names.length?await read(path.join(d,names.at(-1))):null,task_count:names.length,review:await exists(path.join(d,'review.json'))?await read(path.join(d,'review.json')):null});}return out;}
 function panel(p,id){const i=p.panels.find(x=>x.id===id);check(i,'UNKNOWN_PANEL','Choose a panel ID from the fixed plan.');return i;}
 const state=r=>!r?'pending':r.review?(r.review.accepted?'accepted':'needs-revision'):!r.task?'reserved':['succeeded','partial'].includes(r.task.status)?'awaiting-review':['failed','uncertain','download_failed'].includes(r.task.status)?'needs-recovery':'running';
+async function analyzePlanFile(planFile){
+ const p=await read(planFile),base=path.dirname(path.resolve(planFile)),analysis=inspectPanelPlan(p),references=new Map();
+ // References are read-only and independent of budget/layout errors. Report all
+ // bad references now rather than exposing them one at a time after replanning.
+ if(Array.isArray(p?.panels))for(const [n,i] of p.panels.entries())if(Array.isArray(i?.references)){
+  const refs=[];
+  for(const [j,value] of i.references.entries())try{refs.push(await resolvePanelReference(base,value));}catch(error){analysis.issues.push({code:error.code??'INVALID_IMAGE',path:`$.panels[${n}].references[${j}]`,panel_id:i.id??null,current:value,required:error.message});}
+  references.set(i.id,refs);
+ }
+ const report={ok:analysis.issues.length===0,valid:analysis.issues.length===0,issues:analysis.issues,layout:analysis.layout,paid_action:false,project_created:false,next_action:analysis.issues.length?'Resolve every reported issue, check live output capability before accepting suggested target sizes, then check the revised plan.':'Mechanical preflight passed. Local planning is allowed; generation still requires real authorization and live capability validation.'};
+ return {p,references,report};
+}
+export async function checkPanelPlan({planFile}){return (await analyzePlanFile(planFile)).report;}
 export async function planPanels({planFile,outputDirectory}){
  await preflightOutputDirectory(outputDirectory);
- const p=await read(planFile),base=path.dirname(path.resolve(planFile));knownFields(p,['product_id','variant','template_id','width','height','padding','label_height','panels','authorization','layout_candidates']);
- const W=p.width??3840,H=p.height??2160,margin=p.padding??4,title=p.label_height??33;
- check(safeId(p.product_id)&&note(p.variant)&&TEMPLATES.includes(p.template_id),'INVALID_PLAN','Product, variant and declared template are required.');
- check(integer(W,640,7680)&&integer(H,360,4320)&&W*9===H*16&&integer(margin,0,100)&&integer(title,20,180),'INVALID_PLAN','Use a valid 16:9 board and label/padding dimensions.');
- check(Array.isArray(p.panels)&&p.panels.length>=2&&p.panels.length<=8,'INVALID_PLAN','Plan 2–8 individually generated panels.');
- const ids=new Set(),items=[];
- for(const i of p.panels){knownFields(i,['id','label','role','intent','width','height','ratio','resolution','box','references','evidence']);check(safeId(i.id)&&!ids.has(i.id)&&note(i.label)&&i.label.length<=24&&note(i.role)&&note(i.intent),'INVALID_PLAN','Unique panel IDs, short labels, roles and composition intent are required.');ids.add(i.id);
- check(integer(i.width,256,8192)&&integer(i.height,256,8192)&&RATIOS.includes(i.ratio)&&['1K','2K','4K'].includes(i.resolution),'INVALID_PLAN','Plan each standalone image target size, supported ratio and resolution tier.');const [rw,rh]=i.ratio.split(':').map(Number);check(Math.abs(i.width/i.height/(rw/rh)-1)<=.01,'INVALID_RATIO','Standalone target dimensions must match the generation ratio.');
- check(i.evidence?.inspected===true&&note(i.evidence.note),'EVIDENCE_REQUIRED','Record inspected original product evidence for the planned view.');check(Array.isArray(i.references)&&i.references.length>0,'EVIDENCE_REQUIRED','Each panel requires original product references.');const refs=[];for(const f of i.references)refs.push(await resolvePanelReference(base,f));items.push({...i,references:refs,crop:{left:0,top:0,width:i.width,height:i.height}});
- }
- check(items.some(i=>i.role==='overall')&&items.some(i=>i.role==='scale'),'EVIDENCE_MISSING','Full product and recognizable scale reference are required.');
- const explicit=items.some(i=>i.box);check(!explicit||items.every(i=>i.box),'INVALID_PLAN','Specify all fixed boxes or let the planner compute all.');
- const candidates=p.layout_candidates??[];
- check(Array.isArray(candidates)&&candidates.length<=15,'INVALID_LAYOUT_CANDIDATES','Provide at most 15 ordered alternatives (16 attempts including the primary plan).');
- check(!explicit||!candidates.length,'PLACEMENT_CONFLICT','Explicit boxes lock placement; layout alternatives require computed placement.');
- // Caller owns composition choices. The CLI validates all alternatives before
- // searching, preserves evidence/roles, and stops at the first feasible plan.
- const options=[items];
- for(const candidate of candidates){
-  knownFields(candidate,['panels']);check(Array.isArray(candidate.panels)&&candidate.panels.length===items.length,'INVALID_LAYOUT_CANDIDATES','Each alternative must name every panel exactly once.');
-  const seen=new Set(),overrides=new Map();
-  for(const v of candidate.panels){knownFields(v,['id','width','height','ratio']);check(ids.has(v.id)&&!seen.has(v.id),'INVALID_LAYOUT_CANDIDATES','Alternative panel IDs must match the primary plan.');seen.add(v.id);
-   check(integer(v.width,256,8192)&&integer(v.height,256,8192)&&RATIOS.includes(v.ratio),'INVALID_LAYOUT_CANDIDATES','Alternative dimensions and supported ratio are required.');const [rw,rh]=v.ratio.split(':').map(Number);check(Math.abs(v.width/v.height/(rw/rh)-1)<=.01,'INVALID_RATIO','Alternative dimensions must match the generation ratio.');overrides.set(v.id,v);
-  }
-  options.push(items.map(i=>({...i,...overrides.get(i.id),crop:{left:0,top:0,width:overrides.get(i.id).width,height:overrides.get(i.id).height}})));
- }
- let fixed,geometry;const attempts=[];
- for(const [index,option] of options.entries()){
-  try{
-   const placed=explicit?option:denseLayout(option,W,H,margin,title).panels;
-   for(const i of placed){const b=i.box;check(b&&['x','y','width','height'].every(k=>Number.isInteger(b[k]))&&b.x>=0&&b.y>=0&&b.width>2*margin+30&&b.height>title+3*margin+30&&b.x+b.width<=W&&b.y+b.height<=H,'INVALID_PLAN','Fixed panel box must fit the board.');for(const j of placed){if(i===j)continue;const a=j.box;check(b.x>=a.x+a.width||a.x>=b.x+b.width||b.y>=a.y+a.height||a.y>=b.y+b.height,'OVERLAPPING_PANELS','Fixed boxes must not overlap.');}check(i.width>=b.width-2*margin&&i.height>=b.height-title-3*margin,'INSUFFICIENT_RESOLUTION','Plan standalone images large enough for their board placement.');}
-   for(const [role,min] of [['overall',.22],['scale',.14]])check(placed.some(i=>i.role===role&&i.box.width*i.box.height/(W*H)>=min),'ROLE_TOO_SMALL','Reserve at least 22% for full product and 14% for scale.');
-   const g=metrics(placed,W,H,margin,title);check(g.photo_area_fraction>=.9,'LAYOUT_TOO_SPARSE','Adjust fixed boxes, panel ratios or count before generation.');
-   attempts.push({candidate:index,status:'accepted'});fixed=placed;geometry=g;break;
-  }catch(error){
-   if(explicit||!['LAYOUT_UNAVAILABLE','LAYOUT_TOO_SPARSE','INSUFFICIENT_RESOLUTION','ROLE_TOO_SMALL'].includes(error.code))throw error;
-   attempts.push({candidate:index,status:'rejected',code:error.code});
-   if(index===options.length-1)throw Object.assign(error,{details:{layout_search:{attempts,limit:options.length},next_action:'Revise evidence-based candidate ratios, panel count or explicit boxes before generation.'}});
-  }
- }
- const layout_search={attempts,limit:options.length,selected_candidate:attempts.at(-1).candidate,stop_condition:'first-feasible'};
- check(integer(p.authorization?.max_requests,items.length,10000),'INVALID_BUDGET','Declare a total request budget covering the planned panels.');
- const result={schema_version:'panel-assets-1',product_id:p.product_id,variant:p.variant,template_id:p.template_id,width:W,height:H,padding:margin,label_height:title,authorization:p.authorization,model:'nano-banana-pro',panels:fixed,geometry,layout_search,created_at:new Date().toISOString()};await freshDir(outputDirectory);await writeNew(path.join(outputDirectory,'project.json'),result);return {ok:true,project:path.resolve(outputDirectory),panels:fixed.map(({id,label,role,intent,width,height,ratio,resolution,box})=>({id,label,role,intent,width,height,ratio,resolution,box})),geometry,layout_search,execution:'sequential-single-image',paid_action:false,next_action:'The plan meets its mechanical gates. Prepare the first panel; revisit layout only for a concrete unresolved visual requirement.'};
+ const {p,references,report}=await analyzePlanFile(planFile);
+ if(!report.valid)throw Object.assign(new Error('Panel plan preflight failed; inspect details.issues for all independent problems.'),{code:report.issues[0].code,details:{issues:report.issues,layout:report.layout,layout_search:report.layout?.layout_search,next_action:report.next_action}});
+ const layout=report.layout,fixed=layout.panels.map(i=>({...i,references:references.get(i.id)})),geometry=layout.geometry,layout_search=layout.layout_search;
+ const result={schema_version:'panel-assets-1',product_id:p.product_id,variant:p.variant,template_id:p.template_id,width:layout.width,height:layout.height,padding:layout.padding,label_height:layout.label_height,authorization:p.authorization,model:'nano-banana-pro',panels:fixed,geometry,layout_search,created_at:new Date().toISOString()};
+ await freshDir(outputDirectory);await writeNew(path.join(outputDirectory,'project.json'),result);
+ return {ok:true,project:path.resolve(outputDirectory),panels:fixed.map(({id,label,role,intent,width,height,ratio,resolution,box})=>({id,label,role,intent,width,height,ratio,resolution,box})),geometry,layout_search,placement_requirements:layout.requirements,execution:'sequential-single-image',paid_action:false,next_action:p.authorization.confirmed?'The plan meets its mechanical gates. Prepare the first panel within the real authorization.':'Local draft created. Obtain real user authorization before preparing any panel; preserve the selected dimensions and budget until explicitly revised.'};
 }
 export async function panelStatus({projectDirectory}){const p=await project(projectDirectory),panels=[];for(const i of p.panels){const hs=await history(projectDirectory,i.id),last=hs.at(-1),selected=hs.filter(r=>r.review?.accepted).at(-1);panels.push({id:i.id,status:state(last),revisions:hs.length,selected_revision:selected?.request.revision??null,selected:selected?.task.artifacts[0]??null,task_id:last?.task?.task_id??null});}return {ok:true,panels,requests_reserved:panels.reduce((n,i)=>n+i.revisions,0),max_requests:p.authorization.max_requests};}
 export async function preparePanel({projectDirectory,panelId,promptFile,reason}){return locked(projectDirectory,async()=>{

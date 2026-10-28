@@ -170,6 +170,8 @@ role_verdicts须覆盖该板全部角色。通过为ready-for-user，含义仅�
 
 ## 独立单图资产项目
 
+先读[模式A计划预检与尺寸合同](topics/panel-plan-contract.md)与[完整草案JSON](examples/panel-plan.json)。`board check-plan --plan PLAN.json --json`只读汇总issues及逐候选requirements；无项目与付费副作用。board plan复用该检验；失败保留首项旧error.code，details.issues返回全部独立问题，details.layout提供格位和具体尺寸要求。
+
 新建模式A使用以下本地命令；这些命令不上传或生成，只有Agent经媒体Skill实际submit才产生外部生成。
 
 - `board plan --plan PLAN.json --output-directory NEW_PROJECT`：验证并锁定格数/尺寸/box/参考。计划顶层字段product_id、variant、template_id、width/height（16:9）、padding、label_height、panels、authorization及可选layout_candidates。authorization记录真实confirmed、evidence及max_requests（≥n的总请求预算）；未授权仍能本地计划，prepare会拒绝。生成前将真实授权纳入正式项目计划。

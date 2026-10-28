@@ -32,6 +32,18 @@
       },
       "sideEffects": "none"
     },
+    "board check-plan": {
+      "options": {
+        "--plan": {
+          "type": "string",
+          "required": true
+        },
+        "--json": {
+          "type": "boolean"
+        }
+      },
+      "sideEffects": "none"
+    },
     "board plan": {
       "options": {
         "--plan": {

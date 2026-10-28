@@ -7,6 +7,7 @@ import {ROOT,check,read} from './common.mjs';
 export const commands={
  'reference prepare':{required:['plan','output-directory'],optional:[],side_effect:'local-write'},
  'reference check':{required:['reference-record'],optional:['review'],side_effect:'read'},
+ 'board check-plan':{required:['plan'],optional:[],side_effect:'read'},
  'board plan':{required:['plan','output-directory'],optional:[],side_effect:'local-write'},
  'board status':{required:['project'],optional:[],side_effect:'read'},
  'board compose':{required:['project','output-directory'],optional:[],side_effect:'local-write'},
@@ -37,7 +38,7 @@ export async function main(argv){const pos=[],o={};for(let k=0;k<argv.length;k++
  const args={projectDirectory:o.project,panelId:o['panel-id'],reason:o.reason,planFile:o.plan,outputDirectory:o['output-directory'],boardDirectory:o['board-directory'],image:o.image,record:o.record,reviewFile:o.review,referenceFile:o['reference-record'],job:o.job,imageId:o['image-id'],promptFile:o['prompt-file'],taskFile:o['task-json'],analysisFile:o.analysis,blueprintFile:o.blueprint};
  if(key==='reference prepare')return (await import('./reference-images.mjs')).prepareReference(args);
  if(key==='reference check')return (await import('./reference-images.mjs')).checkReference(args);
- const panels={'board plan':'planPanels','board status':'panelStatus','board compose':'composePanels','panel prepare':'preparePanel','panel attach':'attachPanel','panel review':'reviewPanel'};if(panels[key])return (await import('./panel-assets.mjs'))[panels[key]](args);
+ const panels={'board check-plan':'checkPanelPlan','board plan':'planPanels','board status':'panelStatus','board compose':'composePanels','panel prepare':'preparePanel','panel attach':'attachPanel','panel review':'reviewPanel'};if(panels[key])return (await import('./panel-assets.mjs'))[panels[key]](args);
  if(key==='board render')return (await import('./board.mjs')).renderBoard(args);
  if(key==='board check')return (await import('./board.mjs')).checkBoard(args);
  if(key==='asset freeze'||key==='asset import')return (await import('./board.mjs')).registerAsset({...args,imported:key==='asset import'});
@@ -46,4 +47,4 @@ export async function main(argv){const pos=[],o={};for(let k=0;k<argv.length;k++
 }
 const entryPath=process.argv[1]?await fs.realpath(path.resolve(process.argv[1])).catch(()=>null):null;
 const modulePath=await fs.realpath(fileURLToPath(import.meta.url));
-if(entryPath&&(process.platform==='win32'?entryPath.toLowerCase()===modulePath.toLowerCase():entryPath===modulePath)){try{const r=await main(process.argv.slice(2));console.log(JSON.stringify(r,null,2));if(r.ok===false)process.exitCode=1;}catch(e){console.log(JSON.stringify({ok:false,error:{code:e.code??'EXECUTION_FAILED',message:e.message}},null,2));process.exitCode=1;}}
+if(entryPath&&(process.platform==='win32'?entryPath.toLowerCase()===modulePath.toLowerCase():entryPath===modulePath)){try{const r=await main(process.argv.slice(2));console.log(JSON.stringify(r,null,2));if(r.ok===false)process.exitCode=1;}catch(e){console.log(JSON.stringify({ok:false,error:{code:e.code??'EXECUTION_FAILED',message:e.message,...(e.details?{details:e.details}:{})}},null,2));process.exitCode=1;}}

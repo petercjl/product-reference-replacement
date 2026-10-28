@@ -2,4 +2,4 @@
 
 触发：A0完成跨图形态核对，存在冲突时用户已确认基准，进入A1。问题：同款产品必备证据是否齐全，哪些视角/细节增加识别信息，怎样充分利用固定16:9？
 
-先读 [商品证据](../topics/product-evidence.md)、[紧凑布局](../topics/board-layout.md)、模板索引 `../templates/index.md` 和 [通用基线](../templates/generic.md)；识别品类后只加载匹配模板。已有可靠品类时可同批读该模板。复用A0的全图检查和基准记录，必要时补看局部，输出同SKU证据表、overall/scale覆盖、缺口、支持各视角的原始参考、原人物/场景保留范围和必要修改，再按[照片参考准备](../topics/reference-preparation.md)处理页面装饰与必要证据保留，规划每格独立生成目标尺寸/比例与固定格位，通过board plan后返回A2单图生成。A3的asset-review和B的生成恢复资料延迟到对应节点。返回A1，不将模板视角清单当作生成缺失事实的授权。
+先读 [商品证据](../topics/product-evidence.md)、[紧凑布局](../topics/board-layout.md)、模板索引 `../templates/index.md` 和 [通用基线](../templates/generic.md)；识别品类后只加载匹配模板。已有可靠品类时可同批读该模板。复用A0的全图检查和基准记录，必要时补看局部，输出同SKU证据表、overall/scale覆盖、缺口、支持各视角的原始参考、原人物/场景保留范围和必要修改，再按[照片参考准备](../topics/reference-preparation.md)处理页面装饰与必要证据保留，规划每格独立生成目标尺寸/比例与固定格位，按[计划预检与尺寸合同](../topics/panel-plan-contract.md)填写完整草案和授权状态，先board check-plan核对全部问题及具体尺寸，再board plan锁定，返回A2单图生成。A3的asset-review和B的生成恢复资料延迟到对应节点。返回A1，不将模板视角清单当作生成缺失事实的授权。
