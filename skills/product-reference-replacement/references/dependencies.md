@@ -8,7 +8,7 @@
 
 ## 单张图片生成
 
-逻辑Skill名 `sealseek-media`，由 `@petercjl/sealseek-media-cli` 分发。所有生成式图片操作执行前需要；本地A1规划不要求登录。固定使用该包和nano-banana-pro，不调用系统自带生图工具，不在依赖失败时切换供应商或直接API。运行 `sealseek-media skill source --json`，完整读取source/SKILL.md，按当前宿主adapter及callee要求检查version、doctor、live capabilities、认证和 `models show nano-banana-pro --live --json`。要求应用提供的有序参考、单张、2K及需要的画幅、dry-run/submit、同task恢复和原件下载。
+逻辑Skill名 `sealseek-media`，由 `@petercjl/sealseek-media-cli` 分发。仅模式A选择sealseek路线及模式B执行前需要；本地规划与模式A原生imagegen路线无此硬依赖。此分支使用该包和nano-banana-pro，依赖失败按该服务合同恢复，不自行切换供应商或直接API。运行 `sealseek-media skill source --json`，完整读取source/SKILL.md，按当前宿主adapter及callee要求检查version、doctor、live capabilities、认证和 `models show nano-banana-pro --live --json`。要求应用提供的有序参考、单张、2K及需要的画幅、dry-run/submit、同task恢复和原件下载。
 
 按callee当前要求从本宿主实体安装解析其自有launcher/runtime，并核对实际入口版本；若宿主安装缺少所需资源，按能力包安装合同修复并验证，不把其他全局版本视为当前宿主已完整安装。
 
@@ -19,3 +19,5 @@
 依赖能力兼容以当前CLI实际可发现合同为准，不以固定版本列表替代探测；不兼容时停止相应分支并报告。
 
 A1为规划读取媒体合同后，可用stage discover按声明合批只读版本、能力、所选模型；结果在同一阶段及A2复用，变化时重新加载。A2分组执行通过当前媒体Skill明确解析的本地.mjs launcher，使用当前兼容Node执行环境和原始argv，不绑定某个宿主或猜环境路径。宿主入口/环境由宿主能力提供；缺失时报告能力错误。分组调度只委派CLI，不复制认证、API、上传、下载或服务重试实现。
+
+模式A选择native路线时按[原生生成合同](topics/native-generation.md)加载当前宿主的规范图像Skill/工具；应用只消费原件和真实执行依据，统一绑定计划、格位与验收。

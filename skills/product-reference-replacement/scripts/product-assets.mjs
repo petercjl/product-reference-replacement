@@ -24,9 +24,12 @@ export const commands={
  'board status':{required:['project'],optional:[],side_effect:'read'},
  'board compose':{required:['project','output-directory'],optional:[],side_effect:'local-write'},
  'panel prepare':{required:['project','panel-id','prompt-file'],optional:['reason'],side_effect:'local-write-no-generation'},
+ 'panel attach-native':{required:['project','panel-id','result'],optional:[],side_effect:'local-write'},
+ 'panel revise-intent':{required:['project','panel-id','analysis'],optional:[],side_effect:'local-write'},
+ 'board inspect-legacy-plan':{required:['plan'],optional:[],side_effect:'read'},
  'panel attach':{required:['project','panel-id','task-json'],optional:[],side_effect:'local-write'},
  'panel review':{required:['project','panel-id','review'],optional:[],side_effect:'local-write'},
- 'board render':{required:['plan','output-directory'],optional:[],side_effect:'local-write'},
+ 'board render':{required:['plan','output-directory'],optional:['legacy-board'],side_effect:'local-write'},
  'board check':{required:['board-directory'],optional:['review'],side_effect:'read'},
  'asset freeze':{required:['image','record','review'],optional:[],side_effect:'local-write'},
  'asset import':{required:['image','record','review'],optional:[],side_effect:'local-write'},
@@ -42,13 +45,16 @@ export const commands={
 async function doctor(){const checks=[];checks.push({id:'node',ok:Number(process.versions.node.split('.')[0])>=22,value:process.version});try{const sharp=(await import('sharp')).default;const {FONT,label}=await import('./board.mjs');await fs.stat(FONT);const t=await label('产品材质',160,32);checks.push({id:'sharp-and-bundled-cjk-font',ok:t.length>100,version:sharp.versions.sharp});}catch(e){checks.push({id:'sharp-and-bundled-cjk-font',ok:false,error:e.code??e.message,install:'Install the dependencies from the Skill root package.json with npm install.'});}
  try{const {TEMPLATES,denseLayout}=await import('./board-layout.mjs');for(const id of TEMPLATES){const text=await fs.readFile(path.join(ROOT,'references/templates',id+'.md'),'utf8');check(text.startsWith('# ')&&text.length>100,'INVALID_TEMPLATE','Bundled template contract is incomplete.');}check(typeof denseLayout==='function','INVALID_TEMPLATE','Missing layout implementation');(await import('./layout-presets.mjs')).validateLayoutLibrary();checks.push({id:'bundled-asset-templates',ok:true,count:TEMPLATES.length});}catch(e){checks.push({id:'bundled-asset-templates',ok:false,error:e.code??e.message});}
  for(const [id,exe,args] of [['sealseek-media','sealseek-media',['skill','source','--json']],['longslice','longslice',['--version']]]){const r=spawnSync(exe,args,{encoding:'utf8',timeout:30000,windowsHide:true,shell:process.platform==='win32'});let canonicalSkill=null;try{if(id==='sealseek-media'){const j=JSON.parse(r.stdout);check(j.ok&&j.source,'INVALID_DEPENDENCY','Missing canonical Skill');await fs.stat(path.join(j.source,'SKILL.md'));canonicalSkill=j.source;}}catch{}checks.push({id,ok:r.status===0&&(id!=='sealseek-media'||canonicalSkill!==null),canonical_skill:canonicalSkill});}
- return {ok:checks.filter(x=>['node','sharp-and-bundled-cjk-font','bundled-asset-templates'].includes(x.id)).every(x=>x.ok),local_ready:checks.filter(x=>['node','sharp-and-bundled-cjk-font','bundled-asset-templates'].includes(x.id)).every(x=>x.ok),generation_dependency_ready:checks.find(x=>x.id==='sealseek-media').ok,long_image_dependency_ready:checks.find(x=>x.id==='longslice').ok,authentication:'not-checked',checks};}
+ return {ok:checks.filter(x=>['node','sharp-and-bundled-cjk-font','bundled-asset-templates'].includes(x.id)).every(x=>x.ok),local_ready:checks.filter(x=>['node','sharp-and-bundled-cjk-font','bundled-asset-templates'].includes(x.id)).every(x=>x.ok),generation_dependency_ready:checks.find(x=>x.id==='sealseek-media').ok,long_image_dependency_ready:checks.find(x=>x.id==='longslice').ok,generation_routes:{native:{status:'host-verification-required',local_preparation_ready:true},sealseek:{dependency_ready:checks.find(x=>x.id==='sealseek-media').ok}},authentication:'not-checked',checks};}
 export async function main(argv){const pos=[],o={};for(let k=0;k<argv.length;k++){const a=argv[k];if(a==='--json')continue;if(a==='--help')return {ok:true,commands};if(a.startsWith('--')){const name=a.slice(2);check(!Object.hasOwn(o,name)&&argv[k+1]&&!argv[k+1].startsWith('--'),'INVALID_INPUT','Duplicate option or missing option value.');o[name]=argv[++k];}else pos.push(a);}
  const key=pos.join(' ')||'help',contract=commands[key];check(contract,'UNKNOWN_COMMAND','Use help to discover supported commands.');for(const k of Object.keys(o))check([...contract.required,...contract.optional].includes(k),'UNKNOWN_OPTION',`Unsupported --${k} for ${key}.`);for(const k of contract.required)check(o[k],'INVALID_INPUT',`Missing --${k}.`);
  if(key==='help')return {ok:true,commands,paid_action:false,boundary:'Preparation never generates. panel batch-run submit delegates explicit authorized operations to the resolved media CLI; the Agent owns visual inspection.'};
  if(key==='version')return {ok:true,...await read(path.join(ROOT,'package.json'))};if(key==='capabilities')return {ok:true,...await read(path.join(ROOT,'capabilities.json')),command_contracts:commands};if(key==='doctor')return doctor();
  const args={projectDirectory:o.project,panelId:o['panel-id'],reason:o.reason,planFile:o.plan,outputDirectory:o['output-directory'],boardDirectory:o['board-directory'],image:o.image,record:o.record,reviewFile:o.review,referenceFile:o['reference-record'],job:o.job,imageId:o['image-id'],promptFile:o['prompt-file'],taskFile:o['task-json'],analysisFile:o.analysis,blueprintFile:o.blueprint};
  const batchArgs={...args,batchFile:o.batch,mode:o.mode,mediaEntry:o['media-entry'],concurrency:o.concurrency??4,templateFile:o.template,observationsFile:o.observations,operationDirectory:o.directory,lockId:o['lock-id']};
+ if(key==='panel attach-native')return (await import('./workflow-lock.mjs')).attachNativePanel({...args,resultFile:o.result});
+ if(key==='panel revise-intent')return (await import('./workflow-lock.mjs')).revisePanelIntent(args);
+ if(key==='board inspect-legacy-plan')return (await import('./panel-assets.mjs')).checkPanelPlan(args);
  if(key==='layout list')return (await import('./layout-presets.mjs')).listLayouts();
  if(key==='layout show')return (await import('./layout-presets.mjs')).showLayout({layoutId:o['layout-id'],width:o.width,height:o.height,padding:o.padding,labelHeight:o['label-height']});
  if(key==='operation status')return (await import('./operation-lock.mjs')).operationStatus(batchArgs);
@@ -63,8 +69,8 @@ export async function main(argv){const pos=[],o={};for(let k=0;k<argv.length;k++
  if(key==='panel batch-run')return (await import('./panel-batch.mjs')).runPanelBatch(batchArgs);
  if(key==='reference prepare')return (await import('./reference-images.mjs')).prepareReference(args);
  if(key==='reference check')return (await import('./reference-images.mjs')).checkReference(args);
- const panels={'board check-plan':'checkPanelPlan','board plan':'planPanels','board status':'panelStatus','board compose':'composePanels','panel prepare':'preparePanel','panel attach':'attachPanel','panel review':'reviewPanel'};if(panels[key])return (await import('./panel-assets.mjs'))[panels[key]](args);
- if(key==='board render')return (await import('./board.mjs')).renderBoard(args);
+ const panels={'board check-plan':'checkPanelPlan','board plan':'planPanels','board status':'panelStatus','board compose':'composePanels','panel prepare':'preparePanel','panel attach':'attachPanel','panel review':'reviewPanel'};if(panels[key])return (await import('./panel-assets.mjs'))[panels[key]]({...args,...(['board check-plan','board plan'].includes(key)?{requireTemplate:true}:{})});
+ if(key==='board render'){check(o['legacy-board'],'PLAN_LOCK_REQUIRED','New assets use board plan, panel prepare/attach/review, then board compose. Legacy rendering requires the exact saved --legacy-board snapshot.');return (await import('./workflow-lock.mjs')).rerenderLegacyBoard({...args,boardDirectory:o['legacy-board']});}
  if(key==='board check')return (await import('./board.mjs')).checkBoard(args);
  if(key==='asset freeze'||key==='asset import')return (await import('./board.mjs')).registerAsset({...args,imported:key==='asset import'});
  if(key==='blueprint record')return (await import('./blueprint.mjs')).recordBlueprint(args);

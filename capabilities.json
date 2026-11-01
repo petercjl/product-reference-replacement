@@ -336,6 +336,58 @@
       },
       "sideEffects": "local-write"
     },
+    "panel attach-native": {
+      "options": {
+        "--project": {
+          "type": "string",
+          "required": true
+        },
+        "--panel-id": {
+          "type": "string",
+          "required": true
+        },
+        "--result": {
+          "type": "string",
+          "required": true
+        },
+        "--json": {
+          "type": "boolean"
+        }
+      },
+      "sideEffects": "local-write"
+    },
+    "panel revise-intent": {
+      "options": {
+        "--project": {
+          "type": "string",
+          "required": true
+        },
+        "--panel-id": {
+          "type": "string",
+          "required": true
+        },
+        "--analysis": {
+          "type": "string",
+          "required": true
+        },
+        "--json": {
+          "type": "boolean"
+        }
+      },
+      "sideEffects": "local-write"
+    },
+    "board inspect-legacy-plan": {
+      "options": {
+        "--plan": {
+          "type": "string",
+          "required": true
+        },
+        "--json": {
+          "type": "boolean"
+        }
+      },
+      "sideEffects": "none"
+    },
     "panel attach": {
       "options": {
         "--project": {
@@ -385,6 +437,10 @@
         "--output-directory": {
           "type": "string",
           "required": true
+        },
+        "--legacy-board": {
+          "type": "string",
+          "required": false
         },
         "--json": {
           "type": "boolean"
@@ -755,10 +811,22 @@
     "command": "sealseek-media",
     "skill": "sealseek-media",
     "model": "nano-banana-pro",
-    "exclusive": true,
-    "native_image_generation_allowed": false,
+    "exclusive": false,
+    "native_image_generation_allowed": true,
     "direct_api_fallback_allowed": false,
-    "dependency_failure": "Preserve task ID and report CAPABILITY_UNAVAILABLE or FEATURE_UNSUPPORTED; do not switch routes."
+    "dependency_failure": "Preserve task ID and report CAPABILITY_UNAVAILABLE or FEATURE_UNSUPPORTED; do not switch routes.",
+    "mode_a": {
+      "selection": "user and host policy",
+      "routes": [
+        "native",
+        "sealseek"
+      ],
+      "native_contract": "native-image-execution-1"
+    },
+    "mode_b": {
+      "route": "sealseek",
+      "model": "nano-banana-pro"
+    }
   },
   "installationLifecycle": {
     "agentNeutral": true,
@@ -915,7 +983,7 @@
     "maxConcurrency": 4,
     "imagesPerRequest": 1,
     "tail": "actual remaining items",
-    "owner": "application Skill and CLI; media operations delegated to the current media CLI",
+    "owner": "application Skill and CLI; native operations delegated to the current host image tool, selected SealSeek operations delegated to its CLI",
     "submitAuthorization": "Explicit mode submit plus the original real project authorization and remaining total budget",
     "unknownSubmission": "Persist intent before execution; inspect history and bind the existing task; never automatically resubmit",
     "stateOwnership": "CLI-owned revision review.json; caller observations and input reviews stay outside reserved state paths"

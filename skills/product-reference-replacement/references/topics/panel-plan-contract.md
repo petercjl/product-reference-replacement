@@ -29,3 +29,5 @@ layout.layout_search.attempts逐候选返回issues和requirements：每格实际
 先处理全部issues。尺寸不足时核对建议目标与当前模型的原生输出能力；如果当前ratio/resolution支持，可显式修订目标后重检。若不支持，由应用/用户决定调整格位、比例、整板画幅或档位，并明确必要的费用变化。CLI不静默降低画幅、切换比例/档位、放大像素或扩大预算。补充layout_candidates仍代表调用者明确给出的构图备选。
 
 检查通过后运行board plan创建新项目；它复用同一分析器。若失败，error.code保留首项旧错误码，error.details.issues含全部问题，details.layout与layout_search保留可计算恢复信息。缺失授权仍为INVALID_BUDGET，尺寸不足仍为INSUFFICIENT_RESOLUTION。已有有效计划、项目格式及panel生成/验收流程保持兼容。技术预检不能代替实际看图或用户付费授权。
+
+新CLI的board check-plan/board plan要求layout_id，创建带plan-lock的panel-assets-2；旧版计划的只读诊断使用board inspect-legacy-plan，正在运行的旧project继续按原版本恢复。generation声明native/imagegen或sealseek/nano-banana-pro，原生模型未知保存null；通过后按native-generation执行。

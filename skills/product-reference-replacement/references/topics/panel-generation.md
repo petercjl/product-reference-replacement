@@ -30,7 +30,7 @@
 
 ## 分组、验收和修订
 
-board plan → panel batch-prepare → panel batch-run dry-run/submit/follow → 逐格实际看图 → panel batch-review。按 [分组执行合同](batch-generation.md) 每组4个独立单图任务并发、尾组按实际数量；每格保留独立提示词、task、原件和验收。下一组在当前组完成验收或同任务恢复后准备。identity同时对照A0原始基准与通过的全貌核对同款同色、内外轮廓/曲率/比例，并核对所保留人物一致；role核原有服装/动作/环境/道具及接触关系、该格用途和完整轮廓/尺度，clarity核原件与关键局部。只有三项PASS且尺寸比例合格才选中。技术失败、下载失败和未知提交先恢复相同任务，预算按prepare预留；未完成记录保持阻塞，不能用新请求代替恢复。
+board check-plan/board plan锁定 → panel batch-prepare → 按generation路线调用原生工具并attach-native，或执行SealSeek batch-run/attach → 逐格实际看图 → panel batch-review。按 [分组执行合同](batch-generation.md) 每组4个独立单图任务并发、尾组按实际数量；每格保留独立提示词、task、原件和验收。下一组在当前组完成验收或同任务恢复后准备。identity同时对照A0原始基准与通过的全貌核对同款同色、内外轮廓/曲率/比例，并核对所保留人物一致；role核原有服装/动作/环境/道具及接触关系、该格用途和完整轮廓/尺度，clarity核原件与关键局部。新项目还独立判断composition和subject_prominence，五项PASS且尺寸比例合格才选中；旧项目按其实际返回模板验收。技术失败、下载失败和未知提交先恢复相同任务，预算按prepare预留；未完成记录保持阻塞，不能用新请求代替恢复。
 
 用户或验收指出某格问题时，用panel_id、原因及新完整提示词创建本格下一revision。使用该格原始参考，保留其余格通过版本。请求预算用尽就汇报并等待追加范围；A的沟通不是B每图四轮规则。历史通过图不会被新失败图覆盖；有未通过最新修订时暂不交付新的完整整板。
 
@@ -39,3 +39,5 @@ board plan → panel batch-prepare → panel batch-run dry-run/submit/follow →
 全部最新单图通过后board compose，按锁定box等比拼合，保存images目录中的n张未缩放原件、board子目录中的16:9整板和两个预览、composition.json中的版本/来源/hash及请求验收证据。单格修订只变该格图源，其他格不重新生成、不重排，结果像素应保持一致。整板还需board check和真实视觉review，用户满意再freeze。单图技术通过不能代替用户定稿；新合成不继承旧整板的用户满意声明。
 
 已有直接裁片计划可以用board render读取、复现；新建资产主线使用独立单张生成。用户明确只要原图拼合时，按该具体范围本地渲染并说明交付为原图整理。
+
+新模式A项目先完成board check-plan/board plan锁定；按[native-generation](native-generation.md)选择原生或SealSeek分支。单图新模板增加composition与subject_prominence，两项与identity/role/clarity一起通过。主体有效面积由实际看图判断。

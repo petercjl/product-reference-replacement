@@ -7,13 +7,13 @@ description: 制作可复用的16:9产品资产图并与用户沟通定稿，或
 
 两种模式独立成立。A接收产品照片组或完整详情页，制作、沟通调整并定稿资产图；B接收已有资产图及待修改图片，默认单张，明确批量后整组共用同一资产版本。用户可以只做A，也可以直接做B。
 
-应用负责产品理解、选图、逐格生成规划、布局、用户沟通、提示词、状态及验收。本地脚本执行明确的单图任务记录、版本选择、固定格位合成和记录校验；生成由用户已指定的 `sealseek-media` 能力承担。模式B固定 `nano-banana-pro`，每次1张、两张参考、每图最多4轮。商品身份与受保护场景共同满足才算完成；默认保留原手势，几何冲突时说明原因。安装Skill不授权生图。
+应用负责产品理解、选图、逐格生成规划、布局、用户沟通、提示词、状态及验收。本地脚本执行明确的单图任务记录、版本选择、固定格位合成和记录校验；模式A按用户选择与宿主规则使用原生图像工具或sealseek-media；每条路线均绑定同一套计划和验收状态。模式B固定 `nano-banana-pro`，每次1张、两张参考、每图最多4轮。商品身份与受保护场景共同满足才算完成；默认保留原手势，几何冲突时说明原因。安装Skill不授权生图。
 
-## 图片生成的固定执行路线
+## 生成路线与统一资产流程
 
-本Skill内所有生成式图片操作统一使用npm能力包 `@petercjl/sealseek-media-cli`，通过其 `sealseek-media` CLI和动态加载的同名规范Skill执行，模型固定 `nano-banana-pro`。此规则覆盖场景替换、逐轮修改，以及用户明确选择的生成式资产制作。系统自带的imagegen/图像生成工具、其他供应商和直接API调用均不作为执行或故障替代路线。包缺失、认证失败或模型不可用时，按当前媒体合同修复或报告阻塞，保留已有任务ID。
+模式A按用户明确选择与宿主规则确定生成路线。宿主原生imagegen可用时，通过当前宿主的规范图像Skill/工具生成；用户选择SealSeek时动态加载sealseek-media的当前完整Skill，使用nano-banana-pro。选定路线写进generation；能力缺失或结果未知时保留请求/任务并按对应工具恢复，不自行切换服务或直接调用API。模式B保留nano-banana-pro的现有两图替换合同。
 
-原图裁切、等比缩放、拼合和文字标签属于本地确定性排版，通过本包工具执行。模式A先规划独立图片，按4个独立单图任务一组并发，尾组按实际数量，逐格通过验收后以本地工具合成为资产图。用户发起资产制作后按明确的张数和总请求预算执行；仅安装或修改Skill不授权付费生成。
+本地CLI负责照片参考、模板计划、请求预留、原件绑定、修订与验收、固定格位合成；生成能力拥有实际工具调用与服务恢复。模式A每组最多4个独立单图请求，尾组用实际数量。安装或修改Skill不授权生图。
 
 ## 输入、输出与入口
 
@@ -34,7 +34,7 @@ description: 制作可复用的16:9产品资产图并与用户沟通定稿，或
 
 运行前读取当前实体安装目录的 `.product-reference-install.json`，按其中相对 `runtime_entry` 从当前Skill目录解析本地配套CLI；完整加载当前实体SKILL和相对资源。每个宿主使用自己的 `.runtime`、脚本及依赖，`source_provenance`仅用于追溯。未安装时先按包根INSTALL.md完成实体安装；已有托管软链接通过skill update迁移。直接开发包中的规范Skill时使用该包根CLI。
 
-运行 `product-reference-replacement doctor --json`。安装或更新诊断先使用包的 `skill source/status/install/update` 和 `update` 入口；从 `skill source --json` 返回source动态加载当前完整Skill。自定义宿主使用自己解析的明确target-directory，更新后同步相同目录。包未安装时由Agent安装完整npm包；本地依赖缺失按 [工具合同](references/tool-contract.md) 修复包依赖并重跑；媒体未安装时可完成本地规划，生成阶段等待依赖修复；长图缺切片能力则只阻塞相应长图分支。
+运行 `product-reference-replacement doctor --json`。安装或更新诊断先使用包的 `skill source/status/install/update` 和 `update` 入口；从 `skill source --json` 返回source动态加载当前完整Skill。自定义宿主使用自己解析的明确target-directory，更新后同步相同目录。包未安装时由Agent安装完整npm包；本地依赖缺失按 [工具合同](references/tool-contract.md) 修复包依赖并重跑；所选SealSeek分支媒体依赖未安装时可完成本地规划，该生成分支等待依赖修复；原生路线检查宿主图像能力；长图缺切片能力则只阻塞相应长图分支。
 
 更新失败或结果未知时，使用可用的新入口查询 `update status --target-directory <当前目标> --json`，结合实际版本和Skill状态定位已完成阶段。包已获取时复用已验证候选完成同步；先保存或解决本地修改，再恢复。保留替换前备份和操作回执，核验完成后再讨论清理。历史托管link更新请求由包迁移为实体副本；旧父进程仅显示通用错误时，以新版入口的持久回执获取具体错误和恢复动作。
 
@@ -60,19 +60,23 @@ description: 制作可复用的16:9产品资产图并与用户沟通定稿，或
 
 确定同一款色/规格，建立“信息→源图/裁切→清晰度→是否上板”的证据表。外形、比例、可见组件关系、材质外观、纹理、标识和使用状态以原始商品证据为准，未见结构不补成事实。资产表达以商品自身为核心，不依赖某张待修改场景。
 
-先按 [照片参考准备](references/topics/reference-preparation.md) 区分详情页装饰与真实照片区。含外框、文字、灰底或拼图留白的来源，按实际看图坐标准备照片参考，核对商品、人物、接触和本格必要环境完整保留；纯照片可原样使用。按 [准备合批与模板绑定](references/topics/batch-preparation.md) 一次读取本阶段已确定的合同与品类模板，复用A0检查；加载当前媒体Skill后用 `stage discover` 合批只读发现，尺寸与费用依据保留到A2。用 `reference batch-prepare` 保存原像素裁切、来源、坐标预览和完整preparation_record，按inspection_files实际批量看图，再用独立observations输入交给 `reference batch-review` 消费原模板并核验。参考计划绑定返回的prepared/review引用；原有单项prepare/check继续可用。安全照片区无法确定或裁切损失关键证据时留在A1处理，不把整页装饰默认交给模型去除。
+先按 [照片参考准备](references/topics/reference-preparation.md) 区分详情页装饰与真实照片区。含外框、文字、灰底或拼图留白的来源，按实际看图坐标准备照片参考，核对商品、人物、接触和本格必要环境完整保留；纯照片可原样使用。按 [准备合批与模板绑定](references/topics/batch-preparation.md) 一次读取本阶段已确定的合同与品类模板，复用A0检查；按本次generation路线发现当前图像能力，尺寸与费用依据保留到A2；仅SealSeek分支加载其媒体Skill并使用stage discover。用 `reference batch-prepare` 保存原像素裁切、来源、坐标预览和完整preparation_record，按inspection_files实际批量看图，再用独立observations输入交给 `reference batch-review` 消费原模板并核验。参考计划绑定返回的prepared/review引用；原有单项prepare/check继续可用。安全照片区无法确定或裁切损失关键证据时留在A1处理，不把整页装饰默认交给模型去除。
 
-按内容模板的证据职责先确定2–8张独立图片，再按[固定布局库](references/layouts/README.md)用layout list/show选择匹配格数与横竖构图的几何模板。模板固定位置、面积与版本；每张图绑定slot_id，全貌放s1、尺度放s2，其他格按新增识别信息分配。记录layout_id、layout_version和选择理由，再确定每格标签、目标宽高、生成比例、分辨率档位及原始参考。预检要求最大/最小格面积比≤2.5、最小格≥9%，1600宽预览实际照片矩形短边≥300像素；素材完整性与实际可读性同样通过。模板不适配时提出新模板方案供用户确认。每张图只承担本格证据职责。先按[计划预检与尺寸合同](references/topics/panel-plan-contract.md)使用完整草案，显式填写authorization；运行 `board check-plan` 一次检查全部问题并读取逐格尺寸要求，通过后用 `board plan` 保存计划并核对≥90%照片矩形覆盖率。计划应列明n张初始生成及允许的总请求预算；需要追加费用范围时再由用户决定。尺寸是独立原图验收目标和合成尺寸，实际生成参数依当前模型ratio/resolution合同，不能把规划像素当作服务支持的精确输出参数。通过计划后才进入A2。详见 [逐格生成合同](references/topics/panel-generation.md)。
+按内容模板的证据职责先确定2–8张独立图片，再按[固定布局库](references/layouts/README.md)用layout list/show选择匹配格数与横竖构图的几何模板。模板固定位置、面积与版本；每张图绑定slot_id，全貌放s1、尺度放s2，其他格按新增识别信息分配。记录layout_id、layout_version和选择理由，再确定每格标签、目标宽高、生成比例、分辨率档位及原始参考。预检要求最大/最小格面积比≤2.5、最小格≥9%，1600宽预览实际照片矩形短边≥300像素；素材完整性与实际可读性同样通过。模板不适配时提出新模板方案供用户确认。每张图只承担本格证据职责。先按[计划预检与尺寸合同](references/topics/panel-plan-contract.md)使用完整草案，显式填写authorization；运行 `board check-plan` 一次检查全部问题并读取逐格尺寸要求，通过后用 `board plan` 保存计划并核对≥90%照片矩形覆盖率。计划应列明n张初始生成及允许的总请求预算；需要追加费用范围时再由用户决定。尺寸是独立原图验收目标和合成尺寸，实际生成参数依当前模型ratio/resolution合同，不能把规划像素当作服务支持的精确输出参数。普通新任务以board plan创建panel-assets-2项目与plan-lock；原件及修订全过程绑定这份计划，最终由board compose合成。board render只重现已有legacy-board快照。通过计划后才进入A2。详见 [逐格生成合同](references/topics/panel-generation.md)。
 
 ### A2 每组4个独立单图任务与逐格验收
 
-按 [逐格生成路线](references/queries/generate-panels.md) 加载生成方法及 [媒体依赖合同](references/dependencies.md)，复用A1已加载且版本未变的媒体Skill、launcher和nano-banana-pro发现回执；未加载或版本、账户、模型变化时按依赖合同完整加载并核验。按 [单图提示词编译](references/topics/panel-generation.md#单图提示词) 从参考职责、保留关系和必要修改编写本轮最终要求，识别笔记留在分析中。按 [分组执行合同](references/topics/batch-generation.md) 将独立格子按计划顺序分为4个一组，尾组按实际数量；通过 `panel batch-prepare` 一次准备本组各格完整提示词，预算锁内统一核验，每次媒体请求count=1，按规划中明确的素材职责输入参考。涉及人物/尺度/使用状态时，分别指定原人物场景素材与正确商品参考的职责。通常原人物场景素材在前；当用户明确要求校准产品几何时，可将正确全貌放在首位，人物场景图只控制其保留范围。商品结构、内外轮廓、曲率和比例由用户指定的正确商品参考决定，原素材中的人物、动作和场景由原图承载。已确认的生成全貌仅作为明确选定的商品辅助参考，人物和场景仍由原始素材承载。同组各格使用独立execution.json。通过 `panel batch-run` 的dry-run、submit和follow模式直接消费原始argv，最多4个单图进程并发；逐项持久保存进程结果、独立task_id及原件。真实授权范围内提交，未知结果核对历史并恢复原任务，避免重新提交。组内各格完成真实验收或诊断恢复后再准备下一组。明确依赖生成结果的格子先等待其依赖通过；固定整板由本地工具合成。旧单请求入口及正在执行的旧项目保持其兼容合同。
+按[逐格生成路线](references/queries/generate-panels.md)与[原生生成和锁定流程](references/topics/native-generation.md)执行。先读取已锁定项目的generation与逐格职责，用panel batch-prepare按4个独立单图一组预留请求；每个execution.json是实际生成的输入合同。使用用户原始商品基准，人物/动作/环境由其原素材承载。提示词按[单图提示词方法](references/topics/panel-generation.md)编写，保留参考关系，围绕构图与必要修改表达。
 
-逐格实际看高清原件，与A0确认的原始形态基准、原始主素材及商品参考分别比较：商品身份、应保留的人物身份/服装/动作/场景、该格职责、接触与尺度关系及清晰度，将identity/role/clarity和证据写入独立observations，通过 `panel batch-review` 直接读取当前任务模板并绑定原件hash；单格仍可用review fill与panel review。验收输入放在工作目录或PROJECT/inputs/reviews，CLI管理revision中的review.json；保留路径冲突按返回路径指引处理并沿用原任务。目标尺寸与比例须由实际原件满足；像素放大不能增加真实细节。PASS保留原件；FAIL或UNCERTAIN记录定位问题，调整本格完整提示词，在已授权请求预算内重新生成本格，仍使用原始商品证据。技术失败和未知提交结果按现有task_id恢复，付费请求不因重启而重新计数。模式A的局部沟通按用户范围和总预算推进；模式B仍有每图最多4轮。
+原生路线用当前宿主图像工具逐项执行native-image-execution-1合同，每次1张；用panel attach-native将真实返回的原件、调用ID（如有）、实际模型（如暴露）与request_sha256绑定。SealSeek路线动态加载[媒体依赖](references/dependencies.md)，按[分组执行合同](references/topics/batch-generation.md)执行dry-run、submit、同ID follow并attach。CLI不替代原生工具，也不为未知工具信息虚构服务task ID或模型。
+
+实际查看每格原件和必要局部，用返回模板评估identity、role、clarity、composition、subject_prominence。后两项分别检查完整构图/必要参照，以及产品或目标细节是否占用足够的有效画面；照片覆盖率不代表主体可读。所有项PASS及实际尺寸合格才选中。用review fill/panel review或panel batch-review保存真实判断；保留失败原件。局部失败先保持该格职责、调整提示词，只重做该格。
+
+需要更换人物尺度素材、使用参照或证据表达时，按native-generation中的职责变更合同记录reason与新素材，执行panel revise-intent。明确的人物或动作要求保持在用户范围内；调整仍满足同一slot职责。变更仅使该格需要新一轮生成/验收；其他格原件和固定位置复用。已知技术失败先恢复原请求/任务，未知结果查历史；预算与参考身份保留。模式B每图最多4轮的独立合同不变。
 
 ### A3 合成、局部调整与用户定稿
 
-所有格的最新图片通过后运行 `board compose`，交付n张单独高清原图和一张16:9多宫格资产图。合成使用计划锁定的box，图片等比放入，不重新求解布局。每次合成写新目录、原件hash和格子版本选择清单，历史图片与整板均保留。
+所有格当前职责与最新图片通过后运行 `board compose`，交付n张单独高清原图和一张16:9多宫格资产图。合成使用计划锁定的box，图片等比放入，不重新求解布局。每次合成写新目录、原件hash和格子版本选择清单，历史图片与整板均保留。
 
 在展示和处理反馈节点加载 [资产沟通方法](references/topics/asset-review.md)。运行 `board check`，实际查看整板、各格和1600/1920宽预览，核对身份、完整轮廓、尺度参照、标签及关键细节可读性；用本板hash记录真实视觉review并再次check。机械指标与视觉检查都通过后，直接展示真实图片并提供整板与n张原图的文件链接及简短缺口说明。
 

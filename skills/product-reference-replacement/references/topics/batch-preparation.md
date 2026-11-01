@@ -6,7 +6,7 @@
 
 在A1一次合批读取当前路线要求的商品证据、布局、通用模板、已确定的品类模板、照片准备、计划合同与示例。把已加载文件和结果路径记入工作记录；A0基准和已有全图检查继续有效。阶段切换复用这些内容，输入、版本、账户、模型或相关合同改变时才读取受影响部分。A2的生成/验收方法在进入A2时加载。
 
-为规划原生尺寸和费用，准确解析并完整加载当前 `sealseek-media` Skill、当前宿主适配和它的本地launcher。用 `stage discover --media-entry ABSOLUTE_LAUNCHER.mjs --output-directory NEW_WORK_DIR --json` 合批查询版本、实时能力和固定的nano-banana-pro模型合同。默认最多4个独立进程；每项返回JSON结果与持久回执。该命令只读服务数据、写本地记录，不提交生图。复用成功的discovery.json，失败项保持明确失败；版本或账户改变后重新发现并按依赖合同加载新Skill。
+仅generation.route=sealseek时，为规划原生尺寸和费用，准确解析并完整加载当前 `sealseek-media` Skill、当前宿主适配和它的本地launcher。用 `stage discover --media-entry ABSOLUTE_LAUNCHER.mjs --output-directory NEW_WORK_DIR --json` 合批查询版本、实时能力和固定的nano-banana-pro模型合同。默认最多4个独立进程；每项返回JSON结果与持久回执。该命令只读服务数据、写本地记录，不提交生图。复用成功的discovery.json，失败项保持明确失败；版本或账户改变后重新发现并按依赖合同加载新Skill。
 
 ## 原生照片准备与实际检查
 

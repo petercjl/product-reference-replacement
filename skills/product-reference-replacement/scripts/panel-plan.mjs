@@ -42,7 +42,7 @@ function inspectPlacement(placed,W,H,padding,labelHeight,indexById){
 
 export function inspectPanelPlan(p){
  const issues=[];
- if(!fields(p,['product_id','variant','template_id','width','height','padding','label_height','panels','authorization','layout_candidates','layout_id','layout_version'],'$',issues))return {issues,layout:null};
+ if(!fields(p,['product_id','variant','template_id','width','height','padding','label_height','panels','authorization','layout_candidates','layout_id','layout_version','generation'],'$',issues))return {issues,layout:null};
  const W=p.width??3840,H=p.height??2160,padding=p.padding??4,labelHeight=p.label_height??(p.layout_id?32:33);
  for(const [k,valid,required] of [['product_id',safeId(p.product_id),'Valid product ID'],['variant',note(p.variant),'Nonempty variant'],['template_id',TEMPLATES.includes(p.template_id),TEMPLATES]])if(!valid)issues.push(issue('INVALID_PLAN','$.'+k,p[k],required));
  const canvasValid=integer(W,640,7680)&&integer(H,360,4320)&&W*9===H*16&&integer(padding,0,100)&&integer(labelHeight,20,180);

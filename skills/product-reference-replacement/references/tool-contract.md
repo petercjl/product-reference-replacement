@@ -211,3 +211,7 @@ role_verdicts须覆盖该板全部角色。通过为ready-for-user，含义仅�
 ## 固定布局发现
 
 `layout list --json`只读返回版本化布局库；`layout show --layout-id ID [--width W --height H --padding P --label-height L] --json`只读返回固定slot、照片框及几何比例建议。新计划用layout_id、layout_version:1和panels[].slot_id，check-plan/plan与compose共用坐标来源与照片可读性门槛。旧无layout_id计划继续按历史合同读取。
+
+## 新项目与原生结果
+
+board check-plan/plan要求固定模板；plan写不可变project与plan-lock。原生路线的panel prepare/batch-prepare返回native-image-execution-1。panel attach-native --project --panel-id --result将真实输出绑定request_sha256；panel revise-intent --project --panel-id --analysis记录职责变化，只使该格需重验。五项视觉验收后统一board compose。board render需要--legacy-board，仅复现既存历史快照；board inspect-legacy-plan只读检查旧计划。

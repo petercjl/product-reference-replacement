@@ -1,1 +1,10 @@
-{"inspected": false, "identity": "UNCERTAIN", "role": "UNCERTAIN", "clarity": "UNCERTAIN", "issues": [], "evidence": ""}
+{
+  "inspected": false,
+  "identity": "UNCERTAIN",
+  "role": "UNCERTAIN",
+  "clarity": "UNCERTAIN",
+  "issues": [],
+  "evidence": "",
+  "composition": "UNCERTAIN",
+  "subject_prominence": "UNCERTAIN"
+}

@@ -45,3 +45,5 @@
 本包包含 MIT 许可代码及 SIL Open Font License 授权的 Noto CJK 字体，许可文件随包提供。
 
 开发/运行合同：准备阶段通过reference batch-prepare/batch-review直接消费模板；模式A通过panel batch-prepare/batch-run/batch-review保留每格独立task和验收，未知提交只恢复原任务。当前阶段的依赖、原图检查和机械回执复用；验收输入使用外部工作目录，内部review.json由CLI维护。安装与源码修复本身不授权付费测试或替换运行中的环境。
+
+模式A按用户与宿主选择支持原生imagegen或SealSeek。新任务先锁定模板计划，原件绑定请求并逐格验收后统一合成；职责调整保留版本，只重做受影响格。

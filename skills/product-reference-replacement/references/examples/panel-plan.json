@@ -86,5 +86,10 @@
     }
   ],
   "layout_id": "L4",
-  "layout_version": 1
+  "layout_version": 1,
+  "generation": {
+    "route": "native",
+    "tool": "imagegen",
+    "model": null
+  }
 }

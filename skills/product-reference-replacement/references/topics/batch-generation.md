@@ -28,8 +28,10 @@
 
 输入review、observations及自有分析放在工作目录或PROJECT/inputs/reviews。`panels/ID/revision-NNNN`中的request、execution、task和review.json由CLI管理；review.json是正式状态输出。传入该保留路径时返回REVIEW_INPUT_PATH_COLLISION及建议输入位置。遇到手写输入占用该位置，先保留并移出该输入，再提交外部路径；沿用已保存的生成任务。非法内部记录返回带具体路径的INVALID_PANEL_REVIEW_STATE，不以文件存在推断已验收。
 
-每格identity/role/clarity和尺寸全部通过才选中；FAIL/UNCERTAIN保留证据并准备有针对性的后续revision。用户只要求改单格时，其余通过原件和固定格位保持。整组最新格全部通过后回A3合成、整板验收和用户定稿。
+每格按返回模板全部通过且尺寸合格才选中；新项目包含identity/role/clarity/composition/subject_prominence五项，旧项目沿用其原字段；FAIL/UNCERTAIN保留证据并准备有针对性的后续revision。用户只要求改单格时，其余通过原件和固定格位保持。整组最新格全部通过后回A3合成、整板验收和用户定稿。
 
 ## 兼容边界
 
 旧panel prepare入口保留单活动任务合同，旧project/revision和现有execution记录继续可读。新分组通过单独的batch_record显式进入；不会迁移正在运行的任务、替换已安装Skill或重置已有预留。新参数不向旧运行时隐式传递。升级及付费测试分别按实际授权执行。
+
+此页执行面仅适用于generation.route=sealseek；native路线按[native-generation](native-generation.md)使用同一预留/验收流程及宿主原生工具，不调用batch-run的媒体子进程。新项目review模板含composition与subject_prominence，按原模板完整填写。

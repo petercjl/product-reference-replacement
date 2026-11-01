@@ -91,7 +91,11 @@
         "source-crop-provenance",
         "plan-preflight",
         "versioned-layout-library",
-        "balanced-readable-slots"
+        "balanced-readable-slots",
+        "locked-modern-plan",
+        "native-result-binding",
+        "versioned-panel-intent",
+        "subject-prominence-review"
       ],
       "input_fields": [
         "request"
@@ -155,7 +159,7 @@
     {
       "id": "media.generate",
       "purpose": "A逐格单张生成、B两图单张替换",
-      "required": true,
+      "required": false,
       "required_features": [
         "ordered-references",
         "single-output",
@@ -255,11 +259,43 @@
         "OUTPUT_CONTRACT_FAILED",
         "PROVIDER_FAILURE"
       ]
+    },
+    {
+      "id": "native.generate",
+      "purpose": "Execute one host-native reference-based image request and return an original with honest invocation metadata.",
+      "required": false,
+      "required_features": [
+        "ordered-references",
+        "single-output",
+        "local-original",
+        "explicit-result-identity"
+      ],
+      "input_fields": [
+        "prompt",
+        "references",
+        "ratio",
+        "minimum_size"
+      ],
+      "output_fields": [
+        "artifact_path",
+        "evidence"
+      ],
+      "side_effects": {
+        "external_mutation": true,
+        "may_cost_money": true,
+        "authorization": "Only prepared requests within the real project budget authorize generation."
+      },
+      "errors": [
+        "CAPABILITY_UNAVAILABLE",
+        "PROVIDER_FAILURE",
+        "SUBMISSION_UNCERTAIN"
+      ]
     }
   ],
   "conditional_dependencies": {
-    "media.generate": "Mode A2 and B2; local planning/rendering is independent",
-    "long.images": "Mode A1 long images only"
+    "media.generate": "Mode B and mode A sealseek branch; native branch uses host generation capability",
+    "long.images": "Mode A1 long images only",
+    "native.generate": "Mode A generation.route=native; calling host supplies its native image tool"
   },
   "host_resolution": {
     "fallback_adapter": "generic",
@@ -270,9 +306,21 @@
     "command": "sealseek-media",
     "skill": "sealseek-media",
     "model": "nano-banana-pro",
-    "exclusive": true,
-    "native_image_generation_allowed": false,
+    "exclusive": false,
+    "native_image_generation_allowed": true,
     "direct_api_fallback_allowed": false,
-    "dependency_failure": "Preserve task ID and report CAPABILITY_UNAVAILABLE or FEATURE_UNSUPPORTED; do not switch routes."
+    "dependency_failure": "Preserve task ID and report CAPABILITY_UNAVAILABLE or FEATURE_UNSUPPORTED; do not switch routes.",
+    "mode_a": {
+      "selection": "user and host policy",
+      "routes": [
+        "native",
+        "sealseek"
+      ],
+      "native_contract": "native-image-execution-1"
+    },
+    "mode_b": {
+      "route": "sealseek",
+      "model": "nano-banana-pro"
+    }
   }
 }
