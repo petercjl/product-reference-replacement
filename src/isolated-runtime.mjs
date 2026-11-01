@@ -11,6 +11,10 @@ export async function materializeRuntime(stage){
  }
  try{execute('npm',['install','--prefix',runtime,'--ignore-scripts','--omit=dev','--no-audit','--no-fund','--prefer-offline','--dry-run=false','--json=false']);}
  catch(error){error.code='RUNTIME_INSTALL_FAILED';throw error;}
+ // npm may rewrite package.json formatting on a platform. Preserve canonical bytes
+ // only after verifying its parsed manifest is unchanged.
+ const original=await fs.readFile(path.join(ROOT,'package.json')),installed=await fs.readFile(path.join(runtime,'package.json'));
+ if(!original.equals(installed)){if(JSON.stringify(JSON.parse(original))!==JSON.stringify(JSON.parse(installed)))fail('RUNTIME_MANIFEST_CHANGED','npm changed the package manifest contract.');await fs.writeFile(path.join(runtime,'package.json'),original);}
  // Runtime dependencies are private to this target. npm's generated command
  // shims are not used by this runtime; omit their links from the physical copy.
  await fs.rm(path.join(runtime,'node_modules','.bin'),{recursive:true,force:true});
@@ -31,9 +35,11 @@ export async function verifyRuntime(target,version){
  }catch{return false;}
 }
 
-export async function runtimeReceiptMatchesSource(receipt){
- if(!receipt)return false;const pkg=await packageInfo(),names=['package.json',...pkg.files],expected={};
+export async function runtimeSourceDifferences(receipt){
+ if(!receipt)return ['<runtime-receipt-missing>'];const pkg=await packageInfo(),names=['package.json',...pkg.files],expected={};
  for(const name of names){const from=path.resolve(ROOT,name);if(!from.startsWith(ROOT+path.sep)||name.includes('*'))fail('INVALID_PACKAGE_FILES','Expected owned concrete package files.');const stat=await exists(from);if(!stat)continue;if(stat.isSymbolicLink())fail('UNSAFE_LINK',from);if(stat.isDirectory()){for(const [rel,h] of Object.entries(await hashes(from)))expected[name+'/'+rel]=h;}else expected[name]=hash(await fs.readFile(from));}
  const actual=Object.fromEntries(Object.entries(receipt).filter(([k])=>names.some(n=>k===n||k.startsWith(n+'/'))));
- return Object.keys({...actual,...expected}).every(k=>actual[k]===expected[k]);
+ return Object.keys({...actual,...expected}).filter(k=>actual[k]!==expected[k]);
 }
+
+export async function runtimeReceiptMatchesSource(receipt){return (await runtimeSourceDifferences(receipt)).length===0;}
