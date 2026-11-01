@@ -28,3 +28,8 @@ test('same-version runtime-only changes require reconciliation and preserve the 
  const status=call('skill','status','--target-directory',targetDirectory);assert.equal(status.up_to_date,false);assert.equal(status.runtime_source_current,false);assert.deepEqual(status.edited,[]);
  const update=call('skill','update','--target-directory',targetDirectory);assert.equal(update.changed,true);assert.equal(update.up_to_date,true);assert.equal(await fs.readFile(path.join(update.backup,'.runtime/capabilities.json'),'utf8'),before);assert.equal((await readJSON(path.join(targetDirectory,'.runtime/capabilities.json'))).fixture_runtime_only,'updated');assert.equal(call('skill','update','--target-directory',targetDirectory).changed,false);
 });
+
+
+test('npm manifest formatting, key order and Windows file paths preserve the same package contract',async()=>{
+ const {sameManifestContract}=await import('../src/isolated-runtime.mjs');const a={name:'fixture',version:'1.0.0',files:['src','skills/tool/SKILL.md'],bin:{fixture:'bin/main.mjs'},dependencies:{sharp:'0.35.5'}};const b={dependencies:{sharp:'0.35.5'},bin:{fixture:'bin\\main.mjs'},files:['skills\\tool\\SKILL.md','src'],version:'1.0.0',name:'fixture'};assert.equal(sameManifestContract(a,b),true);b.dependencies.sharp='0.35.6';assert.equal(sameManifestContract(a,b),false);b.dependencies.sharp='0.35.5';b.bin.fixture='other/main.mjs';assert.equal(sameManifestContract(a,b),false);
+});

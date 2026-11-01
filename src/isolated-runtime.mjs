@@ -1,6 +1,9 @@
 import fs from 'node:fs/promises';import path from 'node:path';import {spawnSync} from 'node:child_process';
 import {ROOT,PACKAGE,packageInfo,exists,fail,hashes,hash} from './common.mjs';
 import {execute} from './command.mjs';
+import {isDeepStrictEqual} from 'node:util';
+const portableManifest=value=>{const out=structuredClone(value),normalize=p=>path.posix.normalize(p.replaceAll('\\','/'));if(Array.isArray(out.files))out.files=out.files.map(normalize).sort();if(out.bin&&typeof out.bin==='object')for(const k of Object.keys(out.bin))out.bin[k]=normalize(out.bin[k]);return out;};
+export const sameManifestContract=(a,b)=>isDeepStrictEqual(portableManifest(a),portableManifest(b));
 export async function materializeRuntime(stage){
  const runtime=path.join(stage,'.runtime');await fs.mkdir(runtime);
  const pkg=await packageInfo();
@@ -14,7 +17,7 @@ export async function materializeRuntime(stage){
  // npm may rewrite package.json formatting on a platform. Preserve canonical bytes
  // only after verifying its parsed manifest is unchanged.
  const original=await fs.readFile(path.join(ROOT,'package.json')),installed=await fs.readFile(path.join(runtime,'package.json'));
- if(!original.equals(installed)){if(JSON.stringify(JSON.parse(original))!==JSON.stringify(JSON.parse(installed)))fail('RUNTIME_MANIFEST_CHANGED','npm changed the package manifest contract.');await fs.writeFile(path.join(runtime,'package.json'),original);}
+ if(!original.equals(installed)){if(!sameManifestContract(JSON.parse(original),JSON.parse(installed))){const a=portableManifest(JSON.parse(original)),b=portableManifest(JSON.parse(installed)),fields=Object.keys({...a,...b}).filter(k=>!isDeepStrictEqual(a[k],b[k]));fail('RUNTIME_MANIFEST_CHANGED','npm changed package manifest fields: '+fields.join(', '));}await fs.writeFile(path.join(runtime,'package.json'),original);}
  // Runtime dependencies are private to this target. npm's generated command
  // shims are not used by this runtime; omit their links from the physical copy.
  await fs.rm(path.join(runtime,'node_modules','.bin'),{recursive:true,force:true});
