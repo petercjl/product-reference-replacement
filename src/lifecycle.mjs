@@ -1,6 +1,6 @@
 import {beginOperation,operationFailure} from './operations.mjs';
 import {legacyBackup} from './legacy-backup.mjs';
-import {materializeRuntime,verifyRuntime} from './isolated-runtime.mjs';
+import {materializeRuntime,verifyRuntime,runtimeReceiptMatchesSource} from './isolated-runtime.mjs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { SOURCE, ROOT, PACKAGE, exists, fail, hashes, packageInfo, readJSON, writeNew } from './common.mjs';
@@ -44,9 +44,9 @@ export async function status({agent='generic',home,targetDirectory,source=SOURCE
  const current=canonical(await hashes(target)),expected=canonical(await hashes(source));
  const edited=changed(current,canonical(m.hashes??{}));
  if(m.runtime_hashes){const now=await hashes(path.join(target,'.runtime')).catch(()=>({}));edited.push(...changed(now,m.runtime_hashes).map(k=>'.runtime/'+k));}
- const version=(await packageInfo()).version;const runtimeValid=await verifyRuntime(target,version);
+ const version=(await packageInfo()).version;const runtimeValid=await verifyRuntime(target,version),runtimeCurrent=await runtimeReceiptMatchesSource(m.runtime_hashes);
  const receiptCurrent=m.version===version&&m.runtime_entry==='.runtime/bin/product-reference-replacement.mjs'&&m.runtime_version===version;
- return {ok:true,installed:true,managed:true,mode:'copy',target,source,version:m.version,edited,up_to_date:changed(current,expected).length===0&&receiptCurrent&&runtimeValid,runtime_verified:runtimeValid,runtime_entry:path.join(target,'.runtime/bin/product-reference-replacement.mjs'),host_registration:'pending'};
+ return {ok:true,installed:true,managed:true,mode:'copy',target,source,version:m.version,edited,up_to_date:changed(current,expected).length===0&&receiptCurrent&&runtimeValid&&runtimeCurrent,runtime_source_current:runtimeCurrent,runtime_verified:runtimeValid,runtime_entry:path.join(target,'.runtime/bin/product-reference-replacement.mjs'),host_registration:'pending'};
 }
 export async function install(options={}){
  const target=targetFor(options.agent??'generic',options.home,options.targetDirectory);

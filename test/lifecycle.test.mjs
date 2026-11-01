@@ -1,4 +1,5 @@
 import test from 'node:test';
+import {spawnSync} from 'node:child_process';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import path from 'node:path';
@@ -16,3 +17,14 @@ test('old npm-owned link migrates and preserves host metadata, with edit protect
 test('copy policy rejects fresh links, accepts historical managed update and reconciles stale receipts',async t=>{const d=await tmp(t),targetDirectory=path.join(d,'owned');await assert.rejects(install({targetDirectory,mode:'link'}),{code:'ISOLATION_REQUIRED'});await assert.rejects(install({targetDirectory,mode:'link',update:true}),{code:'ISOLATION_REQUIRED'});assert.equal(await fs.stat(targetDirectory).catch(()=>null),null);const first=await install({targetDirectory});assert.equal(first.mode,'copy');const noop=await install({targetDirectory,mode:'link',update:true});assert.equal(noop.changed,false);assert.equal(noop.migration.legacy_mode_translated,true);assert.equal(noop.mode,'copy');const marker=path.join(targetDirectory,'.product-reference-install.json');const data=JSON.parse(await fs.readFile(marker,'utf8'));data.version='0.0.0';await fs.writeFile(marker,JSON.stringify(data));assert.equal((await status({targetDirectory})).up_to_date,false);const fixed=await install({targetDirectory,update:true});assert.equal(fixed.changed,true);assert.equal(fixed.version,JSON.parse(await fs.readFile(path.join(ROOT,'package.json'),'utf8')).version);assert.ok(fixed.backup);const runtimeFile=path.join(targetDirectory,'.runtime/src/lifecycle.mjs');await fs.appendFile(runtimeFile,'\n// local runtime change');await assert.rejects(install({targetDirectory,update:true}),{code:'LOCAL_EDITS'});});
 
 test('target-owned runtime can inspect itself through a canonical path, unrelated source overlap stays forbidden',async t=>{const d=await tmp(t),targetDirectory=path.join(d,'physical-host');await install({targetDirectory});const real=await fs.realpath(targetDirectory);const source=path.join(real,'.runtime/skills/product-reference-replacement');const own=await status({targetDirectory:real,source});assert.equal(own.up_to_date,true);assert.equal(own.runtime_verified,true);await assert.rejects(status({targetDirectory:source,source}),{code:'INVALID_INPUT'});await assert.rejects(status({targetDirectory:path.dirname(SOURCE),source:SOURCE}),{code:'INVALID_INPUT'});});
+
+
+test('same-version runtime-only changes require reconciliation and preserve the previous runtime',async t=>{
+ const d=await tmp(t),sourceRoot=path.join(d,'candidate'),pkg=await readJSON(path.join(ROOT,'package.json'));await fs.mkdir(sourceRoot);
+ for(const name of ['package.json',...pkg.files]){const from=path.join(ROOT,name),to=path.join(sourceRoot,name);await fs.mkdir(path.dirname(to),{recursive:true});await fs.cp(from,to,{recursive:true});}
+ const targetDirectory=path.join(d,'selected-host'),entry=path.join(sourceRoot,'bin/product-reference-replacement.mjs');
+ function call(...args){const r=spawnSync(process.execPath,[entry,...args,'--json'],{encoding:'utf8',env:{...process.env,PRODUCT_REFERENCE_REPLACEMENT_UPDATE_CHECK:'0'},timeout:120000});assert.equal(r.status,0,r.stdout+r.stderr);return JSON.parse(r.stdout);}
+ call('skill','install','--target-directory',targetDirectory);const manifest=path.join(sourceRoot,'capabilities.json'),before=await fs.readFile(manifest,'utf8'),changed=JSON.parse(before);changed.fixture_runtime_only='updated';await fs.writeFile(manifest,JSON.stringify(changed));
+ const status=call('skill','status','--target-directory',targetDirectory);assert.equal(status.up_to_date,false);assert.equal(status.runtime_source_current,false);assert.deepEqual(status.edited,[]);
+ const update=call('skill','update','--target-directory',targetDirectory);assert.equal(update.changed,true);assert.equal(update.up_to_date,true);assert.equal(await fs.readFile(path.join(update.backup,'.runtime/capabilities.json'),'utf8'),before);assert.equal((await readJSON(path.join(targetDirectory,'.runtime/capabilities.json'))).fixture_runtime_only,'updated');assert.equal(call('skill','update','--target-directory',targetDirectory).changed,false);
+});

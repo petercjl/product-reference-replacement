@@ -1,5 +1,5 @@
 import fs from 'node:fs/promises';import path from 'node:path';import {spawnSync} from 'node:child_process';
-import {ROOT,PACKAGE,packageInfo,exists,fail,hashes} from './common.mjs';
+import {ROOT,PACKAGE,packageInfo,exists,fail,hashes,hash} from './common.mjs';
 import {execute} from './command.mjs';
 export async function materializeRuntime(stage){
  const runtime=path.join(stage,'.runtime');await fs.mkdir(runtime);
@@ -29,4 +29,11 @@ export async function verifyRuntime(target,version){
   const q=spawnSync(process.execPath,['--input-type=module','-e',"import {createRequire} from 'node:module';import fs from 'node:fs';import path from 'node:path';const r=createRequire(process.argv[1]);const resolved=fs.realpathSync(r.resolve('sharp'));if(!resolved.startsWith(fs.realpathSync(path.dirname(process.argv[1]))+path.sep))process.exit(1);r('sharp');",path.join(runtime,'package.json')],{encoding:'utf8',timeout:10000,windowsHide:true});
   return q.status===0;
  }catch{return false;}
+}
+
+export async function runtimeReceiptMatchesSource(receipt){
+ if(!receipt)return false;const pkg=await packageInfo(),names=['package.json',...pkg.files],expected={};
+ for(const name of names){const from=path.resolve(ROOT,name);if(!from.startsWith(ROOT+path.sep)||name.includes('*'))fail('INVALID_PACKAGE_FILES','Expected owned concrete package files.');const stat=await exists(from);if(!stat)continue;if(stat.isSymbolicLink())fail('UNSAFE_LINK',from);if(stat.isDirectory()){for(const [rel,h] of Object.entries(await hashes(from)))expected[name+'/'+rel]=h;}else expected[name]=hash(await fs.readFile(from));}
+ const actual=Object.fromEntries(Object.entries(receipt).filter(([k])=>names.some(n=>k===n||k.startsWith(n+'/'))));
+ return Object.keys({...actual,...expected}).every(k=>actual[k]===expected[k]);
 }
