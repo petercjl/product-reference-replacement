@@ -12,7 +12,7 @@ export async function materializeRuntime(stage){
   if(!await exists(from))continue;const to=path.join(runtime,name);await fs.mkdir(path.dirname(to),{recursive:true});
   await fs.cp(from,to,{recursive:true,filter:p=>!['node_modules','.runtime'].includes(path.basename(p))});
  }
- try{execute('npm',['install','--prefix',runtime,'--ignore-scripts','--omit=dev','--no-audit','--no-fund','--prefer-offline','--dry-run=false','--json=false']);}
+ try{execute('npm',['install','--prefix',runtime,'--no-save','--ignore-scripts','--omit=dev','--no-audit','--no-fund','--prefer-offline','--dry-run=false','--json=false']);}
  catch(error){error.code='RUNTIME_INSTALL_FAILED';throw error;}
  // npm may rewrite package.json formatting on a platform. Preserve canonical bytes
  // only after verifying its parsed manifest is unchanged.
