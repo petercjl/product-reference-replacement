@@ -1,5 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import os from 'node:os';
 import {createHash,randomUUID} from 'node:crypto';
 export const ROOT=path.resolve(import.meta.dirname,'..');
 export const hash=data=>createHash('sha256').update(data).digest('hex');
@@ -25,4 +26,4 @@ export const integer=(v,min,max)=>Number.isInteger(v)&&v>=min&&v<=max;
 export function knownFields(value,allowed){check(value&&typeof value==='object'&&!Array.isArray(value),'INVALID_INPUT','Expected a JSON object.');for(const k of Object.keys(value))check(allowed.includes(k),'UNKNOWN_FIELD',`Unsupported JSON field: ${k}`);}
 export const safeId=v=>typeof v==='string'&&/^[a-z][a-z0-9-]{0,63}$/.test(v);
 export const escapeText=s=>s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&apos;');
-export async function locked(dir,fn){const p=path.join(dir,'.operation-lock');let h;try{h=await fs.open(p,'wx');}catch(e){if(e.code==='EEXIST')check(false,'LOCKED','Another operation owns this job lock. Inspect it before manual recovery.');throw e;}try{await h.writeFile(JSON.stringify({id:randomUUID(),pid:process.pid}));return await fn();}finally{await h.close();await fs.unlink(p);}}
+export async function locked(dir,fn){const p=path.join(dir,'.operation-lock');let h;try{h=await fs.open(p,'wx');}catch(e){if(e.code==='EEXIST')throw Object.assign(new Error('Another operation owns this job lock. Read operation status before recovery.'),{code:'LOCKED',details:{lock_file:p,directory:path.resolve(dir),recovery:'operation status --directory; unlock only a verified exited owner and exact lock ID, then recover saved task IDs.'}});throw e;}try{await h.writeFile(JSON.stringify({kind:'product-reference-operation-lock-1',id:randomUUID(),pid:process.pid,host:os.hostname(),created_at:new Date().toISOString()}));return await fn();}finally{await h.close();await fs.unlink(p);}}

@@ -1,5 +1,193 @@
 {
   "commandContracts": {
+    "operation status": {
+      "options": {
+        "--directory": {
+          "type": "string",
+          "required": true
+        },
+        "--json": {
+          "type": "boolean"
+        }
+      },
+      "sideEffects": "none"
+    },
+    "operation unlock": {
+      "options": {
+        "--directory": {
+          "type": "string",
+          "required": true
+        },
+        "--lock-id": {
+          "type": "string",
+          "required": true
+        },
+        "--json": {
+          "type": "boolean"
+        }
+      },
+      "sideEffects": "local-write"
+    },
+    "stage discover": {
+      "options": {
+        "--media-entry": {
+          "type": "string",
+          "required": true
+        },
+        "--output-directory": {
+          "type": "string",
+          "required": true
+        },
+        "--concurrency": {
+          "type": "string",
+          "required": false
+        },
+        "--json": {
+          "type": "boolean"
+        }
+      },
+      "sideEffects": "local-write"
+    },
+    "reference batch-prepare": {
+      "options": {
+        "--plan": {
+          "type": "string",
+          "required": true
+        },
+        "--output-directory": {
+          "type": "string",
+          "required": true
+        },
+        "--concurrency": {
+          "type": "string",
+          "required": false
+        },
+        "--json": {
+          "type": "boolean"
+        }
+      },
+      "sideEffects": "local-write"
+    },
+    "reference batch-check": {
+      "options": {
+        "--plan": {
+          "type": "string",
+          "required": true
+        },
+        "--output-directory": {
+          "type": "string",
+          "required": true
+        },
+        "--concurrency": {
+          "type": "string",
+          "required": false
+        },
+        "--json": {
+          "type": "boolean"
+        }
+      },
+      "sideEffects": "local-write"
+    },
+    "reference batch-review": {
+      "options": {
+        "--plan": {
+          "type": "string",
+          "required": true
+        },
+        "--output-directory": {
+          "type": "string",
+          "required": true
+        },
+        "--concurrency": {
+          "type": "string",
+          "required": false
+        },
+        "--json": {
+          "type": "boolean"
+        }
+      },
+      "sideEffects": "local-write"
+    },
+    "panel batch-review": {
+      "options": {
+        "--project": {
+          "type": "string",
+          "required": true
+        },
+        "--plan": {
+          "type": "string",
+          "required": true
+        },
+        "--output-directory": {
+          "type": "string",
+          "required": true
+        },
+        "--json": {
+          "type": "boolean"
+        }
+      },
+      "sideEffects": "local-write"
+    },
+    "review fill": {
+      "options": {
+        "--template": {
+          "type": "string",
+          "required": true
+        },
+        "--observations": {
+          "type": "string",
+          "required": true
+        },
+        "--review": {
+          "type": "string",
+          "required": true
+        },
+        "--json": {
+          "type": "boolean"
+        }
+      },
+      "sideEffects": "local-write"
+    },
+    "panel batch-prepare": {
+      "options": {
+        "--project": {
+          "type": "string",
+          "required": true
+        },
+        "--plan": {
+          "type": "string",
+          "required": true
+        },
+        "--output-directory": {
+          "type": "string",
+          "required": true
+        },
+        "--json": {
+          "type": "boolean"
+        }
+      },
+      "sideEffects": "local-write"
+    },
+    "panel batch-run": {
+      "options": {
+        "--batch": {
+          "type": "string",
+          "required": true
+        },
+        "--mode": {
+          "type": "string",
+          "required": true
+        },
+        "--media-entry": {
+          "type": "string",
+          "required": true
+        },
+        "--json": {
+          "type": "boolean"
+        }
+      },
+      "sideEffects": "explicit-media-operation"
+    },
     "reference prepare": {
       "options": {
         "--plan": {
@@ -684,5 +872,16 @@
         "--json"
       ]
     }
+  },
+  "batchContract": {
+    "schemaVersion": 1,
+    "group": "panel-batch-1",
+    "maxConcurrency": 4,
+    "imagesPerRequest": 1,
+    "tail": "actual remaining items",
+    "owner": "application Skill and CLI; media operations delegated to the current media CLI",
+    "submitAuthorization": "Explicit mode submit plus the original real project authorization and remaining total budget",
+    "unknownSubmission": "Persist intent before execution; inspect history and bind the existing task; never automatically resubmit",
+    "stateOwnership": "CLI-owned revision review.json; caller observations and input reviews stay outside reserved state paths"
   }
 }

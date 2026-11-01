@@ -10,7 +10,20 @@ const PAD=n=>String(n).padStart(2,'0');
 const terminal=new Set(['succeeded','partial','failed','uncertain','download_failed']);
 async function manifest(job){const j=await read(path.join(job,'job.json'));check(j.schema_version==='1.0.0','INVALID_JOB','Unsupported job format.');return j;}
 function item(j,id){const i=j.images.find(x=>x.id===id);check(i,'UNKNOWN_IMAGE','Choose an image ID listed in this job.');return i;}
-async function rounds(job,id){const dir=path.join(job,id);if(!await exists(dir))return [];const names=(await fs.readdir(dir)).filter(n=>/^round-\d{2}$/.test(n)).sort();const out=[];for(const n of names){const p=path.join(dir,n),r=await read(path.join(p,'request.json'));const tasks=(await fs.readdir(p)).filter(n=>/^task-\d{2}.json$/.test(n)).sort();out.push({directory:p,request:r,task:tasks.length?await read(path.join(p,tasks.at(-1))):null,task_count:tasks.length,review:await exists(path.join(p,'review.json'))?await read(path.join(p,'review.json')):null});}return out;}
+async function rounds(job,id){
+ const dir=path.join(job,id);if(!await exists(dir))return [];const out=[];
+ for(const name of (await fs.readdir(dir)).filter(n=>/^round-\d{2}$/.test(n)).sort()){
+  const directory=path.join(dir,name),request=await read(path.join(directory,'request.json'));
+  const tasks=(await fs.readdir(directory)).filter(n=>/^task-\d{2}\.json$/.test(n)).sort(),task=tasks.length?await read(path.join(directory,tasks.at(-1))):null,file=path.join(directory,'review.json');let review=null;
+  if(await exists(file)){
+   const error=()=>Object.assign(new Error('Invalid CLI-owned round review state; preserve a hand-written input outside round directories and submit that external path, retaining the saved task.'),{code:'INVALID_ROUND_REVIEW_STATE',details:{path:file}});
+   try{review=await read(file);}catch{throw error();}
+   if(typeof review?.accepted!=='boolean'||!Number.isFinite(Date.parse(review?.reviewed_at))||!['PASS','FAIL','UNCERTAIN','ANCHOR_CONFLICT'].includes(review?.verdict)||review.accepted!==(review.verdict==='PASS')||typeof review?.artifact_sha256!=='string'||review.artifact_sha256!==task?.artifacts?.[0]?.sha256)throw error();
+  }
+  out.push({directory,request,task,task_count:tasks.length,review});
+ }
+ return out;
+}
 function statusOf(rs,max=4){if(!rs.length)return 'pending';const r=rs.at(-1);if(r.review){if(r.review.accepted)return 'accepted';if(['UNCERTAIN','ANCHOR_CONFLICT'].includes(r.review.verdict))return 'needs-input';return rs.length>=max?'exhausted':'ready';}if(!r.task)return 'reserved';if(['failed','uncertain','download_failed'].includes(r.task.status))return r.task.status==='failed'?'failed':'needs-recovery';return ['succeeded','partial'].includes(r.task.status)?'awaiting-review':'running';}
 export async function createJob({planFile,outputDirectory}){
  const p=await read(planFile),base=path.dirname(path.resolve(planFile)),mode=p.mode??'single';
@@ -62,9 +75,14 @@ export async function attachTask({job,imageId,taskFile}){return locked(job,async
   const art=t.artifacts[0],f=resolve(path.dirname(path.resolve(taskFile)),art.path),id=await identity(f);if(art.sha256)check(id.sha256===art.sha256,'HASH_MISMATCH','Downloaded artifact hash mismatch.');
   check(path.dirname(f)===r.request.output,'ARTIFACT_PATH_MISMATCH','Use this round\'s configured output directory; task output belongs to another request.');saved.artifacts=[{...id,...await imageInfo(f)}];
  }
- await writeNew(path.join(r.directory,'task-'+PAD(r.task_count+1)+'.json'),saved);return {ok:true,task:saved,next_action:saved.artifacts.length?'Actually inspect this image, then record a visual review.':terminal.has(t.status)?'Diagnose/recover this same task; no new paid attempt automatically.':'Continue following the same task ID.'};
+ await writeNew(path.join(r.directory,'task-'+PAD(r.task_count+1)+'.json'),saved);
+ const review_template={inspected:false,artifact_sha256:saved.artifacts[0]?.sha256??null,product_verdict:'UNCERTAIN',scene_verdict:'UNCERTAIN',issues:[],evidence:'',...(r.request.blueprint?{checks:Object.fromEntries(['product','scene','contact','occlusion','text'].map(k=>[k,{verdict:'UNCERTAIN',evidence:''}]))}:{})};
+ const review_template_file=path.join(r.directory,'task-'+PAD(r.task_count+1)+'-review-template.json');if(saved.artifacts.length)await writeNew(review_template_file,review_template);
+ return {ok:true,task:saved,...(saved.artifacts.length?{review_template,review_template_file}:{}),next_action:saved.artifacts.length?'Actually inspect this image, then record a visual review.':terminal.has(t.status)?'Diagnose/recover this same task; no new paid attempt automatically.':'Continue following the same task ID.'};
 });}
-export async function reviewRound({job,imageId,reviewFile}){return locked(job,async()=>{
+export async function reviewRound({job,imageId,reviewFile}){
+ const parts=path.relative(path.resolve(job),path.resolve(reviewFile)).split(path.sep);if(parts.length===3&&/^round-\d{2}$/.test(parts[1])&&parts[2]==='review.json')throw Object.assign(new Error('Review input collides with CLI-owned round output. Preserve it in inputs/reviews, then submit that external path without regenerating.'),{code:'REVIEW_INPUT_PATH_COLLISION',details:{reserved_path:path.resolve(reviewFile),suggested_input:path.resolve(job,'inputs/reviews',imageId+'.json')}});
+ return locked(job,async()=>{
  const j=await manifest(job);item(j,imageId);const rs=await rounds(job,imageId),r=rs.at(-1),v=await read(reviewFile);
  check(r&&!r.review&&r.task?.artifacts.length===1&&['succeeded','partial'].includes(r.task.status),'ROUND_NOT_READY','Attach a completed downloaded task before visual review.');await unchanged(r.task.artifacts[0]);
  check(v.inspected===true&&v.artifact_sha256===r.task.artifacts[0].sha256,'REVIEW_REQUIRED','Attest real visual inspection of this exact artifact hash.');

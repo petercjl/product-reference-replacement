@@ -42,7 +42,7 @@
         "photo-coverage-metrics",
         "preview-visual-gate",
         "fixed-panel-plan",
-        "sequential-panel-generation",
+        "single-image-panel-requests",
         "panel-revisions",
         "single-panel-recompose",
         "n-originals-and-board",
@@ -52,7 +52,7 @@
       ],
       "implementation": {
         "kind": "script",
-        "instructions": "Resolve runtime_entry from the current physical Skill installation marker relative to that Skill directory; execute the target-owned CLI and dependencies. Provenance paths are not execution roots. Select generic plus one category template, preserve source regions, inspect actual board and 1600/1920 previews, and enforce the visual/geometry contract. Never infer user approval from technical success. For mode A use board plan/status, panel prepare/attach/review, then board compose; preserve fixed boxes and all other panel originals when revising one panel. Deliver n original images plus the board. Prepare decorated-page photo regions with reference prepare/check, preserve declared evidence at native crop size, and bind source/receipt/review hashes to panel references. Before board plan, run read-only board check-plan and resolve every reported issue; use returned placement requirements as explicit caller decisions after checking live output capability. Draft authorization remains confirmed=false until the user authorizes generation."
+        "instructions": "Resolve runtime_entry from the current physical Skill installation marker relative to that Skill directory; execute the target-owned CLI and dependencies. Provenance paths are not execution roots. Select generic plus one category template, preserve source regions, inspect actual board and 1600/1920 previews, and enforce the visual/geometry contract. Never infer user approval from technical success. For mode A use board plan/status, panel prepare/attach/review, then board compose; preserve fixed boxes and all other panel originals when revising one panel. Deliver n original images plus the board. Prepare decorated-page photo regions with reference prepare/check, preserve declared evidence at native crop size, and bind source/receipt/review hashes to panel references. Before board plan, run read-only board check-plan and resolve every reported issue; use returned placement requirements as explicit caller decisions after checking live output capability. Draft authorization remains confirmed=false until the user authorizes generation. For A1 use the batch-preparation topic; for A2 use batch-generation, four independent count=1 tasks per group and exact saved templates. Old single-item recovery remains compatible."
       }
     },
     {
@@ -71,7 +71,7 @@
       ],
       "implementation": {
         "kind": "script",
-        "instructions": "Resolve this physical Skill root and its target-owned runtime_entry, then run job create/status/collect and round prepare/attach/review through the product-reference-replacement package CLI. The scripts never submit media generation. Record an inspected blueprint before preparing new jobs; bind its hash and use product/scene/contact/occlusion/text review checks. Legacy jobs remain recoverable."
+        "instructions": "Resolve this physical Skill root and its target-owned runtime_entry, then run job create/status/collect and round prepare/attach/review through the product-reference-replacement package CLI. Mode B request preparation remains local; mode A batch-run submit delegates authorized operations to the media CLI. Record an inspected blueprint before preparing new jobs; bind its hash and use product/scene/contact/occlusion/text review checks. Legacy jobs remain recoverable."
       }
     },
     {
@@ -102,6 +102,22 @@
       "implementation": {
         "kind": "cli",
         "instructions": "Resolve longslice skill source; load current semantic-image-slicer Skill. Complete analyze, actual preview inspection and cut; return ordered slices and coordinates to A1."
+      }
+    },
+    {
+      "capability_id": "application.batch",
+      "status": "implemented",
+      "features": [
+        "four-single-image-workers",
+        "locked-group-budget-check",
+        "read-only-discovery-batch",
+        "immutable-process-receipts",
+        "same-task-recovery",
+        "reserved-state-ownership"
+      ],
+      "implementation": {
+        "kind": "script",
+        "instructions": "Use the target-owned Node.js 22+ application CLI, the current media Skill’s explicitly resolved .mjs launcher and the host-provided environment. Consume exact JSON argv, original task IDs, persistent process results and visual observations. Follow the batch-preparation and batch-generation topics; no host-specific shell wrapper or provider API integration is required."
       }
     }
   ],

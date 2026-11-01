@@ -12,6 +12,15 @@ import {hash,writeNew} from '../skills/product-reference-replacement/scripts/com
 import {main} from '../skills/product-reference-replacement/scripts/product-assets.mjs';
 const require=createRequire(new URL('../skills/product-reference-replacement/package.json',import.meta.url));
 const sharp=require('sharp');
+test('round review input collision is diagnosed before state interpretation and preserves its task',async t=>{
+ const a=await setup(t),r=await prepared(a),attached=await attachSuccess(a,r),reserved=path.join(r.round_directory,'review.json');
+ await writeNew(reserved,{inspected:true,artifact_sha256:attached.task.artifacts[0].sha256,product_verdict:'PASS',scene_verdict:'PASS',issues:[],evidence:'Synthetic test input.'});
+ await assert.rejects(reviewRound({job:a.job,imageId:'image-1',reviewFile:reserved}),e=>e.code==='REVIEW_INPUT_PATH_COLLISION'&&e.details.reserved_path===reserved);
+ await assert.rejects(jobStatus({job:a.job}),e=>e.code==='INVALID_ROUND_REVIEW_STATE'&&e.details.path===reserved);
+ const external=path.join(a.d,'preserved-input.json');await fs.rename(reserved,external);
+ // The original task remains attached and the normal checked review flow resumes.
+ assert.equal((await jobStatus({job:a.job})).requests_reserved,1);assert.equal((await jobStatus({job:a.job})).images[0].status,'awaiting-review');
+});
 test('round prepare persists its complete executable handoff without consuming another reservation',async t=>{
  const a=await setup(t),result=await prepared(a),saved=JSON.parse(await fs.readFile(result.execution_record,'utf8'));
  const request=JSON.parse(await fs.readFile(saved.request_record,'utf8'));

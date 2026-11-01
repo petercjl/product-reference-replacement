@@ -5,6 +5,16 @@ import {spawnSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 import {ROOT,check,read} from './common.mjs';
 export const commands={
+ 'operation status':{required:['directory'],optional:[],side_effect:'read'},
+ 'operation unlock':{required:['directory','lock-id'],optional:[],side_effect:'local-write'},
+ 'stage discover':{required:['media-entry','output-directory'],optional:['concurrency'],side_effect:'local-write'},
+ 'reference batch-prepare':{required:['plan','output-directory'],optional:['concurrency'],side_effect:'local-write'},
+ 'reference batch-check':{required:['plan','output-directory'],optional:['concurrency'],side_effect:'local-write'},
+ 'reference batch-review':{required:['plan','output-directory'],optional:['concurrency'],side_effect:'local-write'},
+ 'panel batch-review':{required:['project','plan','output-directory'],optional:[],side_effect:'local-write'},
+ 'review fill':{required:['template','observations','review'],optional:[],side_effect:'local-write'},
+ 'panel batch-prepare':{required:['project','plan','output-directory'],optional:[],side_effect:'local-write-no-generation'},
+ 'panel batch-run':{required:['batch','mode','media-entry'],optional:[],side_effect:'explicit-media-operation'},
  'reference prepare':{required:['plan','output-directory'],optional:[],side_effect:'local-write'},
  'reference check':{required:['reference-record'],optional:['review'],side_effect:'read'},
  'board check-plan':{required:['plan'],optional:[],side_effect:'read'},
@@ -33,9 +43,20 @@ async function doctor(){const checks=[];checks.push({id:'node',ok:Number(process
  return {ok:checks.filter(x=>['node','sharp-and-bundled-cjk-font','bundled-asset-templates'].includes(x.id)).every(x=>x.ok),local_ready:checks.filter(x=>['node','sharp-and-bundled-cjk-font','bundled-asset-templates'].includes(x.id)).every(x=>x.ok),generation_dependency_ready:checks.find(x=>x.id==='sealseek-media').ok,long_image_dependency_ready:checks.find(x=>x.id==='longslice').ok,authentication:'not-checked',checks};}
 export async function main(argv){const pos=[],o={};for(let k=0;k<argv.length;k++){const a=argv[k];if(a==='--json')continue;if(a==='--help')return {ok:true,commands};if(a.startsWith('--')){const name=a.slice(2);check(!Object.hasOwn(o,name)&&argv[k+1]&&!argv[k+1].startsWith('--'),'INVALID_INPUT','Duplicate option or missing option value.');o[name]=argv[++k];}else pos.push(a);}
  const key=pos.join(' ')||'help',contract=commands[key];check(contract,'UNKNOWN_COMMAND','Use help to discover supported commands.');for(const k of Object.keys(o))check([...contract.required,...contract.optional].includes(k),'UNKNOWN_OPTION',`Unsupported --${k} for ${key}.`);for(const k of contract.required)check(o[k],'INVALID_INPUT',`Missing --${k}.`);
- if(key==='help')return {ok:true,commands,paid_action:false,boundary:'These scripts never submit generation. The Agent inspects images and invokes the canonical media Skill separately.'};
+ if(key==='help')return {ok:true,commands,paid_action:false,boundary:'Preparation never generates. panel batch-run submit delegates explicit authorized operations to the resolved media CLI; the Agent owns visual inspection.'};
  if(key==='version')return {ok:true,...await read(path.join(ROOT,'package.json'))};if(key==='capabilities')return {ok:true,...await read(path.join(ROOT,'capabilities.json')),command_contracts:commands};if(key==='doctor')return doctor();
  const args={projectDirectory:o.project,panelId:o['panel-id'],reason:o.reason,planFile:o.plan,outputDirectory:o['output-directory'],boardDirectory:o['board-directory'],image:o.image,record:o.record,reviewFile:o.review,referenceFile:o['reference-record'],job:o.job,imageId:o['image-id'],promptFile:o['prompt-file'],taskFile:o['task-json'],analysisFile:o.analysis,blueprintFile:o.blueprint};
+ const batchArgs={...args,batchFile:o.batch,mode:o.mode,mediaEntry:o['media-entry'],concurrency:o.concurrency??4,templateFile:o.template,observationsFile:o.observations,operationDirectory:o.directory,lockId:o['lock-id']};
+ if(key==='operation status')return (await import('./operation-lock.mjs')).operationStatus(batchArgs);
+ if(key==='operation unlock')return (await import('./operation-lock.mjs')).unlockOperation(batchArgs);
+ if(key==='stage discover')return (await import('./batch-tools.mjs')).discoverStage(batchArgs);
+ if(key==='reference batch-prepare')return (await import('./reference-batch.mjs')).prepareReferences(batchArgs);
+ if(key==='reference batch-check')return (await import('./reference-batch.mjs')).checkReferences(batchArgs);
+ if(key==='reference batch-review')return (await import('./reference-batch.mjs')).reviewReferences(batchArgs);
+ if(key==='panel batch-review')return (await import('./panel-batch.mjs')).reviewPanelBatch(batchArgs);
+ if(key==='review fill')return (await import('./reference-batch.mjs')).fillReview(batchArgs);
+ if(key==='panel batch-prepare')return (await import('./panel-batch.mjs')).preparePanelBatch(batchArgs);
+ if(key==='panel batch-run')return (await import('./panel-batch.mjs')).runPanelBatch(batchArgs);
  if(key==='reference prepare')return (await import('./reference-images.mjs')).prepareReference(args);
  if(key==='reference check')return (await import('./reference-images.mjs')).checkReference(args);
  const panels={'board check-plan':'checkPanelPlan','board plan':'planPanels','board status':'panelStatus','board compose':'composePanels','panel prepare':'preparePanel','panel attach':'attachPanel','panel review':'reviewPanel'};if(panels[key])return (await import('./panel-assets.mjs'))[panels[key]](args);

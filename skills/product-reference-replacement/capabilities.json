@@ -83,7 +83,7 @@
         "photo-coverage-metrics",
         "preview-visual-gate",
         "fixed-panel-plan",
-        "sequential-panel-generation",
+        "single-image-panel-requests",
         "panel-revisions",
         "single-panel-recompose",
         "n-originals-and-board",
@@ -214,6 +214,44 @@
         "CAPABILITY_UNAVAILABLE",
         "FEATURE_UNSUPPORTED",
         "OUTPUT_CONTRACT_FAILED"
+      ]
+    },
+    {
+      "id": "application.batch",
+      "purpose": "Bounded preparation and four independent single-image tasks with exact review templates and recoverable process receipts.",
+      "required": true,
+      "required_features": [
+        "four-single-image-workers",
+        "locked-group-budget-check",
+        "read-only-discovery-batch",
+        "immutable-process-receipts",
+        "same-task-recovery",
+        "reserved-state-ownership"
+      ],
+      "input_fields": [
+        "project",
+        "batch_record",
+        "mode",
+        "media_entry",
+        "observations"
+      ],
+      "output_fields": [
+        "ok",
+        "items",
+        "report",
+        "task_id",
+        "review_template_file"
+      ],
+      "side_effects": {
+        "external_mutation": true,
+        "may_cost_money": true,
+        "authorization": "Only explicit mode submit within real project authorization delegates paid single-image operations; prepare, dry-run, follow and review never initiate a new generation."
+      },
+      "errors": [
+        "CAPABILITY_UNAVAILABLE",
+        "PAID_ACTION_NOT_AUTHORIZED",
+        "OUTPUT_CONTRACT_FAILED",
+        "PROVIDER_FAILURE"
       ]
     }
   ],

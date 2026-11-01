@@ -172,7 +172,7 @@ role_verdicts须覆盖该板全部角色。通过为ready-for-user，含义仅�
 
 先读[模式A计划预检与尺寸合同](topics/panel-plan-contract.md)与[完整草案JSON](examples/panel-plan.json)。`board check-plan --plan PLAN.json --json`只读汇总issues及逐候选requirements；无项目与付费副作用。board plan复用该检验；失败保留首项旧error.code，details.issues返回全部独立问题，details.layout提供格位和具体尺寸要求。
 
-新建模式A使用以下本地命令；这些命令不上传或生成，只有Agent经媒体Skill实际submit才产生外部生成。
+模式A的准备与验收命令只写本地记录；分组执行的submit模式在真实授权内委派媒体CLI生成。按[准备合批](topics/batch-preparation.md)与[分组执行](topics/batch-generation.md)消费持久回执。以下单项接口继续支持已有任务。
 
 - `board plan --plan PLAN.json --output-directory NEW_PROJECT`：验证并锁定格数/尺寸/box/参考。计划顶层字段product_id、variant、template_id、width/height（16:9）、padding、label_height、panels、authorization及可选layout_candidates。authorization记录真实confirmed、evidence及max_requests（≥n的总请求预算）；未授权仍能本地计划，prepare会拒绝。生成前将真实授权纳入正式项目计划。
 - panels每项：id、label（≤24字）、role、intent、width/height（原件最低像素目标）、ratio、resolution（1K/2K/4K）、references（有序原始文件路径）、evidence（inspected/note），可选box。全部不填box时按目标比例计算一次，全部填时保留原box。必须有overall/scale，2–8格，照片矩形覆盖≥90%。选受支持比例且足够大的原件；精确像素不是服务参数。
@@ -192,3 +192,18 @@ role_verdicts须覆盖该板全部角色。通过为ready-for-user，含义仅�
 选择回执中的 command 与 dry_run_args 或 submit_args，以参数数组原样交给进程执行器；参数顺序、路径和模式后缀由本包构造。request.json 的 args 与回执 base_args 仅是基础操作参数，不包含执行模式和 --json，不能假设存在 --json 再用索引插入标志。prepare 只准备本地记录，媒体能力负责认证、dry-run、提交及恢复。
 
 旧轮次缺少 execution.json 时，先检查原 request 和已保存媒体任务状态；缺少回执本身不授权重新 prepare、重置轮数或再次提交。未知提交结果仍恢复同一 task_id。
+
+## 合批与模板输入
+
+- `stage discover --media-entry ABSOLUTE.mjs --output-directory NEW_DIR [--concurrency 4]`：一次查询当前阶段需要的媒体版本、实时能力和已选择模型，逐项保存进程结果及discovery.json。
+- `reference batch-prepare --plan LIST --output-directory NEW_DIR [--concurrency 4]`：items为{id,plan}，准备原像素参考。各项输出preparation_record、review_template_file、inspection_files；机器交接消费完整回执。
+- `reference batch-review --plan LIST --output-directory NEW_DIR [--concurrency 4]`：items为{id,preparation_record,observations}，由CLI保留source_sha256/reference_sha256，写独立输入并核验真实观察。
+- `reference batch-check --plan LIST --output-directory NEW_DIR [--concurrency 4]`：items为{id,reference_record,review?}，合批检查现有记录，逐项返回ready与错误。
+- `review fill --template TEMPLATE --observations OBS --review NEW_INPUT`：保留模板全部*_sha256，只合入明确的观察字段；该操作不授予视觉通过。
+- `panel batch-prepare --project PROJECT --plan LIST --output-directory NEW_GROUP`：items为{id,panel_id,prompt_file,reason?,depends_on?}，整组1–4项，各项始终单图。保存batch.json和各格execution/request身份；预算锁内一次检查全组。部分本地准备失败返回preparation_report及已预留状态，保留execution记录和计数。
+- `panel batch-run --batch BATCH --mode dry-run|submit|follow --media-entry ABSOLUTE.mjs`：submit在真实授权内最多4个独立单图并发；模式、原始argv及退出状态均明确。组锁防止重复调用；started/process及task回执保留到各项。只有意图没有结果时核对历史恢复原ID。follow只等待已有ID，不创建生成。
+- `operation status --directory DIRECTORY`：只读返回操作锁的身份、主机及进程存活状态。
+- `operation unlock --directory DIRECTORY --lock-id EXACT_ID`：仅对同机可验证且已退出的所有者先备份再解锁；存活、未知与旧格式锁保留。解锁后检查已有提交意图和原task ID，沿同任务恢复。
+- `panel batch-review --project PROJECT --plan LIST --output-directory NEW_DIR`：items为{id,panel_id,observations}。模板取自当前任务，短状态提交顺序执行；逐项保存外部review输入、真实视觉结果和错误。
+
+批量报告是单一JSON，任一项失败整体ok=false并返回非零进程码，成功项仍完整保留。内容和进程结果分别记录；不从任意混合stdout寻找成功JSON。reference/panel/round的review输入与CLI内部review.json状态输出分离；保留路径返回REVIEW_INPUT_PATH_COLLISION，非法内部状态返回带具体路径的状态错误。先保留并移出手写输入，再沿用已保存任务处理。

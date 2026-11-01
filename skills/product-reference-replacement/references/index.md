@@ -12,6 +12,8 @@
 
 - [产品模板索引](templates/index.md)：A1识别品类后只加载通用基线和匹配模板；全貌与尺度必备。
 
-- A2逐张生成：[生成路线](queries/generate-panels.md) → [独立图片](topics/panel-generation.md)，A3合成再查资产沟通。
+- A2按组单图：[生成路线](queries/generate-panels.md) → [独立图片](topics/panel-generation.md)与[分组执行](topics/batch-generation.md)，A3合成再查资产沟通。
 
 - [原始照片参考准备](topics/reference-preparation.md)：A1选择主素材及比例时区分页面装饰、核对裁切和必要证据。
+
+- A1准备与复用：[合批准备](topics/batch-preparation.md)，只在A1加载；A2的执行与整板定稿保持按需读取。

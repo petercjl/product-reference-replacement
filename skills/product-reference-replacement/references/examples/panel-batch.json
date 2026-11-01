@@ -1,0 +1,8 @@
+{
+  "items": [
+    {"id": "overall", "panel_id": "overall", "prompt_file": "prompts/overall.txt"},
+    {"id": "scale", "panel_id": "scale", "prompt_file": "prompts/scale.txt"},
+    {"id": "material", "panel_id": "material", "prompt_file": "prompts/material.txt"},
+    {"id": "detail", "panel_id": "detail", "prompt_file": "prompts/detail.txt"}
+  ]
+}

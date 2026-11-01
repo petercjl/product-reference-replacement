@@ -1,0 +1,6 @@
+{
+  "items": [
+    {"id": "overall-source", "plan": "crop-plans/overall.json"},
+    {"id": "scale-source", "plan": "crop-plans/scale.json"}
+  ]
+}
