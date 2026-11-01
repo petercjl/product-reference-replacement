@@ -17,8 +17,8 @@
       "label": "产品全貌",
       "role": "overall",
       "intent": "完整产品外观",
-      "width": 1024,
-      "height": 576,
+      "width": 1920,
+      "height": 1080,
       "ratio": "16:9",
       "resolution": "2K",
       "references": [
@@ -27,16 +27,17 @@
       "evidence": {
         "inspected": false,
         "note": "实际看图后填写本格参考职责与证据，再将inspected设为true"
-      }
+      },
+      "slot_id": "s1"
     },
     {
       "id": "scale",
       "label": "尺度参照",
       "role": "scale",
       "intent": "产品与可辨参照物关系",
-      "width": 1024,
-      "height": 576,
-      "ratio": "16:9",
+      "width": 1536,
+      "height": 1024,
+      "ratio": "3:2",
       "resolution": "2K",
       "references": [
         "product-photo.png"
@@ -44,16 +45,17 @@
       "evidence": {
         "inspected": false,
         "note": "实际看图后填写本格参考职责与证据，再将inspected设为true"
-      }
+      },
+      "slot_id": "s2"
     },
     {
       "id": "detail",
       "label": "必要细节",
       "role": "detail",
       "intent": "展示已有原始细节证据",
-      "width": 1024,
-      "height": 576,
-      "ratio": "16:9",
+      "width": 1792,
+      "height": 768,
+      "ratio": "21:9",
       "resolution": "2K",
       "references": [
         "product-photo.png"
@@ -61,15 +63,16 @@
       "evidence": {
         "inspected": false,
         "note": "实际看图后填写本格参考职责与证据，再将inspected设为true"
-      }
+      },
+      "slot_id": "s3"
     },
     {
       "id": "alternate",
       "label": "补充视角",
       "role": "alternate",
       "intent": "展示已有原始补充视角",
-      "width": 1024,
-      "height": 576,
+      "width": 1280,
+      "height": 720,
       "ratio": "16:9",
       "resolution": "2K",
       "references": [
@@ -78,7 +81,10 @@
       "evidence": {
         "inspected": false,
         "note": "实际看图后填写本格参考职责与证据，再将inspected设为true"
-      }
+      },
+      "slot_id": "s4"
     }
-  ]
+  ],
+  "layout_id": "L4",
+  "layout_version": 1
 }

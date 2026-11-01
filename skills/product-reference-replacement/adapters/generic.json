@@ -48,7 +48,9 @@
         "n-originals-and-board",
         "photo-reference-preparation",
         "source-crop-provenance",
-        "plan-preflight"
+        "plan-preflight",
+        "versioned-layout-library",
+        "balanced-readable-slots"
       ],
       "implementation": {
         "kind": "script",

@@ -3,6 +3,7 @@ import path from 'node:path';
 import sharp from 'sharp';
 import {ROOT,check,read,writeNew,freshDir,identity,integer,safeId,escapeText,resolve,hash,unchanged,knownFields,preflightOutputDirectory,reviewFields} from './common.mjs';
 import {denseLayout,metrics,TEMPLATES} from './board-layout.mjs';
+import {placeLayout,layoutGateIssues} from './layout-presets.mjs';
 export const FONT=path.join(ROOT,'assets/fonts/NotoSansCJKsc-Regular.otf');
 process.env.FONTCONFIG_FILE??=path.join(ROOT,'assets/fonts/fonts.conf');
 export async function imageInfo(p){const m=await sharp(p,{failOn:'error'}).metadata();check(!m.pages||m.pages===1,'INVALID_IMAGE','Static images are required.');return {width:m.autoOrient?.width??([5,6,7,8].includes(m.orientation)?m.height:m.width),height:m.autoOrient?.height??([5,6,7,8].includes(m.orientation)?m.width:m.height),format:m.format};}
@@ -10,14 +11,15 @@ export async function label(text,width,height){check(typeof text==='string'&&tex
 export async function renderBoard({planFile,outputDirectory}){
  await preflightOutputDirectory(outputDirectory);
  const plan=await read(planFile),base=path.dirname(path.resolve(planFile)),W=plan.width??3840,H=plan.height??2160;
- knownFields(plan,['product_id','variant','width','height','padding','label_height','panels','layout','template_id']);
+ knownFields(plan,['product_id','variant','width','height','padding','label_height','panels','layout','template_id','layout_id','layout_version']);
  check(plan.layout===undefined||['manual','dense'].includes(plan.layout),'INVALID_PLAN','layout is manual or dense.');
- const dense=plan.layout==='dense';
+ const dense=plan.layout==='dense'&&!plan.layout_id;
  check(integer(W,640,7680)&&integer(H,360,4320)&&W*9===H*16,'INVALID_PLAN','Board dimensions must be exact 16:9, between 640x360 and 7680x4320.');
  check(safeId(plan.product_id)&&typeof plan.variant==='string'&&plan.variant.trim(),'INVALID_PLAN','product_id and explicit variant are required.');
  check(Array.isArray(plan.panels)&&plan.panels.length>=2&&plan.panels.length<=16,'INVALID_PLAN','Specify 2–16 evidence panels; panel count is chosen by the Agent.');
- const ids=new Set(),prepared=[],margin=plan.padding??(dense?Math.max(2,Math.round(W/960)):Math.max(8,Math.round(W/240))),titleHeight=plan.label_height??(dense?Math.max(20,Math.round(H/65)):Math.max(20,Math.round(H/22)));
+ const ids=new Set(),prepared=[],margin=plan.padding??((dense||plan.layout_id)?Math.max(2,Math.round(W/960)):Math.max(8,Math.round(W/240))),titleHeight=plan.label_height??((dense||plan.layout_id)?Math.max(20,Math.round(H/(plan.layout_id?67.5:65))):Math.max(20,Math.round(H/22)));
  check(integer(margin,0,100)&&integer(titleHeight,20,180),'INVALID_PLAN','Invalid padding or label height.');
+ if(plan.layout_id)plan.panels=placeLayout(plan.panels,{...plan,width:W,height:H});
  if(dense){
   check(TEMPLATES.includes(plan.template_id),'INVALID_TEMPLATE','Choose a declared product template.');
   for(const p of plan.panels){check(!p.box,'PLACEMENT_CONFLICT','Dense layout computes boxes; use manual layout to keep explicit placement.');const m=await imageInfo(resolve(base,p.source));p.crop??={left:0,top:0,width:m.width,height:m.height};check(integer(p.crop.width,1,m.width)&&integer(p.crop.height,1,m.height),'INVALID_CROP','Positive source crop dimensions required.');}
@@ -25,7 +27,7 @@ export async function renderBoard({planFile,outputDirectory}){
   plan.panels=denseLayout(plan.panels,W,H,margin,titleHeight).panels;
  }
  for(const p of plan.panels){
-  knownFields(p,['id','label','role','source','crop','box','evidence','protected_regions']);
+  knownFields(p,['id','label','role','source','crop','box','evidence','protected_regions','slot_id']);
   check(safeId(p.id)&&!ids.has(p.id),'INVALID_PLAN','Panel IDs must be unique safe identifiers.');ids.add(p.id);
   check(typeof p.role==='string'&&p.role.trim()&&typeof p.label==='string'&&p.label.trim(),'INVALID_PLAN','Each panel needs its evidence role and truthful label.');
   check(!dense||p.label.length<=24,'INVALID_LABEL','Use a short dense-board label of at most 24 characters.');
@@ -43,16 +45,17 @@ export async function renderBoard({planFile,outputDirectory}){
   const text=await label(`${p.id.toUpperCase()}  ${p.label}`,iw,titleHeight),tm=await sharp(text).metadata();
   prepared.push({...p,source,box:b,crop:c,source_identity:ref,source_dimensions:m,png:crop,content,text,text_height:tm.height,upscaled:c.width<iw&&c.height<ih});
  }
+ if(plan.layout_id){const issues=layoutGateIssues(prepared,W,H,margin,titleHeight);check(!issues.length,issues[0]?.code,'Selected template photo geometry failed: '+JSON.stringify(issues));const g=metrics(prepared,W,H,margin,titleHeight);check(g.photo_area_fraction>=.9,'LAYOUT_TOO_SPARSE','Template photos must fill at least 90% of the board; choose compatible ratios.');}
  const layers=prepared.flatMap(p=>[{input:p.text,left:p.box.x+margin,top:p.box.y+margin},{input:p.content,left:p.box.x+margin,top:p.box.y+titleHeight+2*margin}]);
  const board=await sharp({create:{width:W,height:H,channels:3,background:'#ffffff'}}).composite(layers).png().toBuffer();
  for(const p of prepared)await unchanged(p.source_identity);
  await freshDir(outputDirectory);await fs.mkdir(path.join(outputDirectory,'crops'));
  const panels=[];
- for(const p of prepared){const file=path.join(outputDirectory,'crops',p.id+'.png');await writeNew(file,p.png);panels.push({id:p.id,label:p.label,role:p.role,source:p.source_identity,source_dimensions:p.source_dimensions,crop:p.crop,box:p.box,evidence:p.evidence??null,protected_regions:p.protected_regions??[],crop_file:path.resolve(file),crop_sha256:hash(p.png),upscaled:p.upscaled});}
+ for(const p of prepared){const file=path.join(outputDirectory,'crops',p.id+'.png');await writeNew(file,p.png);panels.push({id:p.id,label:p.label,role:p.role,...(p.slot_id?{slot_id:p.slot_id}:{}),source:p.source_identity,source_dimensions:p.source_dimensions,crop:p.crop,box:p.box,evidence:p.evidence??null,protected_regions:p.protected_regions??[],crop_file:path.resolve(file),crop_sha256:hash(p.png),upscaled:p.upscaled});}
  const file=path.join(outputDirectory,'product-asset-board.png');await writeNew(file,board);
  await fs.mkdir(path.join(outputDirectory,'previews'));const previews=[];for(const width of [1600,1920]){const preview=path.join(outputDirectory,'previews',width+'.png');await writeNew(preview,await sharp(board).resize({width}).png().toBuffer());previews.push({width,...await identity(preview)});}
  const geometry=metrics(panels,W,H,margin,titleHeight),missing=['overall','scale'].filter(role=>!panels.some(p=>p.role===role));
- const result={schema_version:'1.0.0',product_id:plan.product_id,variant:plan.variant,layout:dense?'dense':'manual',template_id:plan.template_id??null,padding:margin,label_height:titleHeight,board:{...await identity(file),width:W,height:H},panels,previews,geometry,technical_pass:geometry.photo_area_fraction>=.9&&missing.length===0,missing_roles:missing,status:'draft',requires_user_approval:true,warnings:panels.filter(p=>p.upscaled).map(p=>`${p.id}: displayed larger than source crop; no extra detail was created.`)};
+ const result={schema_version:'1.0.0',product_id:plan.product_id,variant:plan.variant,layout:dense?'dense':'manual',template_id:plan.template_id??null,...(plan.layout_id?{layout_id:plan.layout_id,layout_version:plan.layout_version??1}:{}),padding:margin,label_height:titleHeight,board:{...await identity(file),width:W,height:H},panels,previews,geometry,technical_pass:geometry.photo_area_fraction>=.9&&missing.length===0,missing_roles:missing,status:'draft',requires_user_approval:true,warnings:panels.filter(p=>p.upscaled).map(p=>`${p.id}: displayed larger than source crop; no extra detail was created.`)};
  await writeNew(path.join(outputDirectory,'board-plan.json'),{...plan,layout:'manual',padding:margin,label_height:titleHeight});await writeNew(path.join(outputDirectory,'sources-manifest.json'),result);return {ok:true,...result};
 }
 export async function registerAsset({image,record,reviewFile,imported=false}){
@@ -73,9 +76,10 @@ export async function checkBoard({boardDirectory,reviewFile}){
  const plan=await read(path.join(boardDirectory,'board-plan.json')),W=m.board.width,H=m.board.height;
  const g=metrics(m.panels,W,H,m.padding??plan.padding??Math.max(8,Math.round(W/240)),m.label_height??plan.label_height??Math.max(20,Math.round(H/22)));
  const missing=['overall','scale'].filter(role=>!m.panels.some(p=>p.role===role));
- const technical=g.photo_area_fraction>=.9&&missing.length===0;
+ const layoutIssues=m.layout_id?layoutGateIssues(m.panels,W,H,m.padding,m.label_height):[];if(m.layout_id)placeLayout(m.panels,{layout_id:m.layout_id,layout_version:m.layout_version,width:W,height:H});
+ const technical=g.photo_area_fraction>=.9&&missing.length===0&&!layoutIssues.length;
  const template={inspected:false,artifact_sha256:m.board.sha256,labels_match:false,identity_match:false,reference_clear:false,role_verdicts:Object.fromEntries([...new Set(m.panels.map(p=>p.role))].map(role=>[role,'UNCERTAIN'])),previews:[1600,1920].map(width=>({width,inspected:false,readable:false})),evidence:''};
  let visual=false;
  if(reviewFile){const v=await read(reviewFile);reviewFields(v,Object.keys(template),template);check(v.artifact_sha256===m.board.sha256,'REVIEW_MISMATCH','artifact_sha256 differs from the verified board. Run board check without --review for its current review_template.');visual=[1600,1920].every(w=>m.previews?.some(p=>p.width===w))&&v.inspected===true&&v.labels_match===true&&v.identity_match===true&&v.reference_clear===true&&['overall','scale'].every(r=>v.role_verdicts?.[r]==='PASS')&&m.panels.every(p=>v.role_verdicts?.[p.role]==='PASS')&&[1600,1920].every(w=>v.previews?.some(p=>p.width===w&&p.inspected===true&&p.readable===true))&&typeof v.evidence==='string'&&v.evidence.trim().length>0;}
- return {ok:true,board:m.board,geometry:g,missing_roles:missing,technical_pass:technical,visual_pass:visual,ready_for_user:technical&&visual,status:!technical?'needs-input':visual?'ready-for-user':'needs-review',review_template:template,next_action:!technical?'Adjust selected evidence/layout; preserve all complete product/reference regions.':visual?'Show the actual board image and wait for real user satisfaction.':'Inspect the board, roles and 1600/1920-wide previews, then fill review_template with real visual judgments; preserve its artifact_sha256.'};
+ return {ok:true,board:m.board,geometry:g,layout_issues:layoutIssues,...(m.layout_id?{layout_id:m.layout_id,layout_version:m.layout_version}:{}),missing_roles:missing,technical_pass:technical,visual_pass:visual,ready_for_user:technical&&visual,status:!technical?'needs-input':visual?'ready-for-user':'needs-review',review_template:template,next_action:!technical?'Adjust selected evidence/layout; preserve all complete product/reference regions.':visual?'Show the actual board image and wait for real user satisfaction.':'Inspect the board, roles and 1600/1920-wide previews, then fill review_template with real visual judgments; preserve its artifact_sha256.'};
 }

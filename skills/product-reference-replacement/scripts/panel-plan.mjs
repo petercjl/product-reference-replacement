@@ -1,5 +1,6 @@
 import {integer,safeId} from './common.mjs';
 import {denseLayout,metrics,TEMPLATES} from './board-layout.mjs';
+import {placeLayout,layoutGateIssues} from './layout-presets.mjs';
 
 const ratios=['1:1','16:9','9:16','4:3','3:4','21:9','3:2','2:3','5:4','4:5'];
 const object=v=>v!==null&&typeof v==='object'&&!Array.isArray(v);
@@ -41,8 +42,8 @@ function inspectPlacement(placed,W,H,padding,labelHeight,indexById){
 
 export function inspectPanelPlan(p){
  const issues=[];
- if(!fields(p,['product_id','variant','template_id','width','height','padding','label_height','panels','authorization','layout_candidates'],'$',issues))return {issues,layout:null};
- const W=p.width??3840,H=p.height??2160,padding=p.padding??4,labelHeight=p.label_height??33;
+ if(!fields(p,['product_id','variant','template_id','width','height','padding','label_height','panels','authorization','layout_candidates','layout_id','layout_version'],'$',issues))return {issues,layout:null};
+ const W=p.width??3840,H=p.height??2160,padding=p.padding??4,labelHeight=p.label_height??(p.layout_id?32:33);
  for(const [k,valid,required] of [['product_id',safeId(p.product_id),'Valid product ID'],['variant',note(p.variant),'Nonempty variant'],['template_id',TEMPLATES.includes(p.template_id),TEMPLATES]])if(!valid)issues.push(issue('INVALID_PLAN','$.'+k,p[k],required));
  const canvasValid=integer(W,640,7680)&&integer(H,360,4320)&&W*9===H*16&&integer(padding,0,100)&&integer(labelHeight,20,180);
  for(const [key,value,min,max] of [['width',W,640,7680],['height',H,360,4320],['padding',padding,0,100],['label_height',labelHeight,20,180]])if(!integer(value,min,max))issues.push(issue('INVALID_PLAN','$.'+key,value,{minimum:min,maximum:max,integer:true}));
@@ -59,7 +60,7 @@ export function inspectPanelPlan(p){
  const ids=new Set();let layoutInputsValid=canvasValid&&list.length>=2&&list.length<=8;
  for(const [n,panel] of list.entries()){
   const at=`$.panels[${n}]`;
-  if(!fields(panel,['id','label','role','intent','width','height','ratio','resolution','box','references','evidence'],at,issues)){layoutInputsValid=false;continue;}
+  if(!fields(panel,['id','label','role','intent','width','height','ratio','resolution','box','references','evidence','slot_id'],at,issues)){layoutInputsValid=false;continue;}
   if(!safeId(panel.id)||ids.has(panel.id)){issues.push(issue('INVALID_PLAN',at+'.id',panel.id,'Unique valid panel ID'));layoutInputsValid=false;}ids.add(panel.id);
   for(const [k,valid,required] of [['label',note(panel.label)&&panel.label.length<=24,'Nonempty label, at most 24 characters'],['role',note(panel.role),'Nonempty role'],['intent',note(panel.intent),'Nonempty intent'],['width',integer(panel.width,256,8192),'Integer 256–8192'],['height',integer(panel.height,256,8192),'Integer 256–8192'],['ratio',ratios.includes(panel.ratio),ratios],['resolution',['1K','2K','4K'].includes(panel.resolution),['1K','2K','4K']]])if(!valid)issues.push(issue('INVALID_PLAN',at+'.'+k,panel[k],required,panel.id));
   if(integer(panel.width,256,8192)&&integer(panel.height,256,8192)&&ratios.includes(panel.ratio)&&!ratioFits(panel))issues.push(issue('INVALID_RATIO',at+'.ratio',{width:panel.width,height:panel.height,ratio:panel.ratio},'Target dimensions match ratio within 1%',panel.id));
@@ -68,8 +69,12 @@ export function inspectPanelPlan(p){
   if(!Array.isArray(panel.references)||!panel.references.length)issues.push(issue('EVIDENCE_REQUIRED',at+'.references',panel.references,'Nonempty ordered original reference paths or prepared/review objects',panel.id));
  }
  for(const role of ['overall','scale'])if(!list.some(i=>i?.role===role))issues.push(issue('EVIDENCE_MISSING','$.panels',role,{required_role:role}));
+ if(p.layout_id!==undefined&&(typeof p.layout_id!=='string'||!p.layout_id)){issues.push(issue('UNKNOWN_LAYOUT','$.layout_id',p.layout_id,'An exact layout ID from layout list'));layoutInputsValid=false;}
+ if(!p.layout_id&&list.some(i=>i?.slot_id!==undefined)){issues.push(issue('LAYOUT_ID_REQUIRED','$.layout_id',p.layout_id,'Select the template owning these slot IDs'));layoutInputsValid=false;}
  const explicit=list.some(i=>i?.box!==undefined);
  if(explicit&&!list.every(i=>i?.box!==undefined)){issues.push(issue('INVALID_PLAN','$.panels[].box','Mixed explicit and computed placement','All boxes or none'));layoutInputsValid=false;}
+ if(p.layout_version!==undefined&&(!p.layout_id||p.layout_version!==1)){issues.push(issue('UNKNOWN_LAYOUT','$.layout_version',p.layout_version,'An existing layout_id with supported version 1'));layoutInputsValid=false;}
+ if(p.layout_id&&p.layout_candidates?.length){issues.push(issue('PLACEMENT_CONFLICT','$.layout_candidates',p.layout_candidates,'A selected template fixes geometry; choose target ratios in the primary plan'));layoutInputsValid=false;}
  const candidates=p.layout_candidates??[];let candidatesValid=Array.isArray(candidates)&&candidates.length<=15;
  if(!candidatesValid)issues.push(issue('INVALID_LAYOUT_CANDIDATES','$.layout_candidates',candidates,'At most 15 ordered alternatives'));
  if(explicit&&candidates.length){issues.push(issue('PLACEMENT_CONFLICT','$.layout_candidates',candidates.length,'Explicit boxes lock placement; omit layout alternatives'));candidatesValid=false;}
@@ -91,7 +96,7 @@ export function inspectPanelPlan(p){
  const indexById=new Map(list.map((p,i)=>[p.id,i])),attempts=[];let selected=null;
  for(const [candidate,items] of options.entries()){
   let placed,checked;
-  try{placed=explicit?items:denseLayout(items,W,H,padding,labelHeight).panels;checked=inspectPlacement(placed,W,H,padding,labelHeight,indexById);}
+  try{placed=p.layout_id?placeLayout(items,{layout_id:p.layout_id,layout_version:p.layout_version,width:W,height:H}):explicit?items:denseLayout(items,W,H,padding,labelHeight).panels;checked=inspectPlacement(placed,W,H,padding,labelHeight,indexById);if(p.layout_id&&checked.geometry)checked.issues.push(...layoutGateIssues(placed,W,H,padding,labelHeight));}
   catch(error){checked={issues:[issue(error.code??'INVALID_PLAN','$.panels',null,error.message)],requirements:[]};}
   if(candidate>0)checked.issues=checked.issues.map(i=>i.code==='INSUFFICIENT_RESOLUTION'?{...i,path:`$.layout_candidates[${candidate-1}].panels[${candidates[candidate-1].panels.findIndex(p=>p.id===i.panel_id)}]`}:i);
   attempts.push({candidate,status:checked.issues.length?'rejected':'accepted',...(checked.issues.length?{code:checked.issues[0].code}:{}),issues:checked.issues,requirements:checked.requirements});
@@ -99,6 +104,6 @@ export function inspectPanelPlan(p){
  }
  if(!selected)issues.push(...attempts.flatMap(a=>a.issues.map(i=>({...i,candidate:a.candidate}))));
  const layout_search={attempts,limit:options.length,...(selected?{selected_candidate:selected.candidate}:{}),stop_condition:selected?'first-feasible':'no-feasible-candidate'};
- const layout={mode:explicit?'manual':'computed',width:W,height:H,padding,label_height:labelHeight,layout_search,...(selected?{panels:selected.panels,geometry:selected.geometry,requirements:attempts.at(-1).requirements}:{}),semantics:'Content-box minimum only; suggestions are not applied and service ratio/resolution/authorization remain caller decisions.'};
+ const layout={mode:p.layout_id?'preset':explicit?'manual':'computed',...(p.layout_id?{layout_id:p.layout_id,layout_version:p.layout_version??1}:{}),width:W,height:H,padding,label_height:labelHeight,layout_search,...(selected?{panels:selected.panels,geometry:selected.geometry,requirements:attempts.at(-1).requirements}:{}),semantics:'Content-box minimum only; suggestions are not applied and service ratio/resolution/authorization remain caller decisions.'};
  return {issues,layout};
 }

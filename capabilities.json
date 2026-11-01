@@ -1,5 +1,41 @@
 {
   "commandContracts": {
+    "layout list": {
+      "options": {
+        "--json": {
+          "type": "boolean"
+        }
+      },
+      "sideEffects": "none"
+    },
+    "layout show": {
+      "options": {
+        "--layout-id": {
+          "type": "string",
+          "required": true
+        },
+        "--width": {
+          "type": "string",
+          "required": false
+        },
+        "--height": {
+          "type": "string",
+          "required": false
+        },
+        "--padding": {
+          "type": "string",
+          "required": false
+        },
+        "--label-height": {
+          "type": "string",
+          "required": false
+        },
+        "--json": {
+          "type": "boolean"
+        }
+      },
+      "sideEffects": "none"
+    },
     "operation status": {
       "options": {
         "--directory": {

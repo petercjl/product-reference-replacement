@@ -62,7 +62,7 @@ description: 制作可复用的16:9产品资产图并与用户沟通定稿，或
 
 先按 [照片参考准备](references/topics/reference-preparation.md) 区分详情页装饰与真实照片区。含外框、文字、灰底或拼图留白的来源，按实际看图坐标准备照片参考，核对商品、人物、接触和本格必要环境完整保留；纯照片可原样使用。按 [准备合批与模板绑定](references/topics/batch-preparation.md) 一次读取本阶段已确定的合同与品类模板，复用A0检查；加载当前媒体Skill后用 `stage discover` 合批只读发现，尺寸与费用依据保留到A2。用 `reference batch-prepare` 保存原像素裁切、来源、坐标预览和完整preparation_record，按inspection_files实际批量看图，再用独立observations输入交给 `reference batch-review` 消费原模板并核验。参考计划绑定返回的prepared/review引用；原有单项prepare/check继续可用。安全照片区无法确定或裁切损失关键证据时留在A1处理，不把整页装饰默认交给模型去除。
 
-按模板的证据职责选择2–8格。生成前确定总画幅、每格内容与标签、固定box坐标/尺寸，以及对应独立图片的目标宽高、生成比例、分辨率档位和原始参考图。全貌与尺度优先分配足够面积；每张图只承担本格证据职责。先按[计划预检与尺寸合同](references/topics/panel-plan-contract.md)使用完整草案，显式填写authorization；运行 `board check-plan` 一次检查全部问题并读取逐格尺寸要求，通过后用 `board plan` 保存计划并核对≥90%照片矩形覆盖率。计划应列明n张初始生成及允许的总请求预算；需要追加费用范围时再由用户决定。尺寸是独立原图验收目标和合成尺寸，实际生成参数依当前模型ratio/resolution合同，不能把规划像素当作服务支持的精确输出参数。通过计划后才进入A2。详见 [逐格生成合同](references/topics/panel-generation.md)。
+按内容模板的证据职责先确定2–8张独立图片，再按[固定布局库](references/layouts/README.md)用layout list/show选择匹配格数与横竖构图的几何模板。模板固定位置、面积与版本；每张图绑定slot_id，全貌放s1、尺度放s2，其他格按新增识别信息分配。记录layout_id、layout_version和选择理由，再确定每格标签、目标宽高、生成比例、分辨率档位及原始参考。预检要求最大/最小格面积比≤2.5、最小格≥9%，1600宽预览实际照片矩形短边≥300像素；素材完整性与实际可读性同样通过。模板不适配时提出新模板方案供用户确认。每张图只承担本格证据职责。先按[计划预检与尺寸合同](references/topics/panel-plan-contract.md)使用完整草案，显式填写authorization；运行 `board check-plan` 一次检查全部问题并读取逐格尺寸要求，通过后用 `board plan` 保存计划并核对≥90%照片矩形覆盖率。计划应列明n张初始生成及允许的总请求预算；需要追加费用范围时再由用户决定。尺寸是独立原图验收目标和合成尺寸，实际生成参数依当前模型ratio/resolution合同，不能把规划像素当作服务支持的精确输出参数。通过计划后才进入A2。详见 [逐格生成合同](references/topics/panel-generation.md)。
 
 ### A2 每组4个独立单图任务与逐格验收
 

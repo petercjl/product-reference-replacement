@@ -207,3 +207,7 @@ role_verdicts须覆盖该板全部角色。通过为ready-for-user，含义仅�
 - `panel batch-review --project PROJECT --plan LIST --output-directory NEW_DIR`：items为{id,panel_id,observations}。模板取自当前任务，短状态提交顺序执行；逐项保存外部review输入、真实视觉结果和错误。
 
 批量报告是单一JSON，任一项失败整体ok=false并返回非零进程码，成功项仍完整保留。内容和进程结果分别记录；不从任意混合stdout寻找成功JSON。reference/panel/round的review输入与CLI内部review.json状态输出分离；保留路径返回REVIEW_INPUT_PATH_COLLISION，非法内部状态返回带具体路径的状态错误。先保留并移出手写输入，再沿用已保存任务处理。
+
+## 固定布局发现
+
+`layout list --json`只读返回版本化布局库；`layout show --layout-id ID [--width W --height H --padding P --label-height L] --json`只读返回固定slot、照片框及几何比例建议。新计划用layout_id、layout_version:1和panels[].slot_id，check-plan/plan与compose共用坐标来源与照片可读性门槛。旧无layout_id计划继续按历史合同读取。

@@ -1,0 +1,518 @@
+{
+  "schema_version": "asset-layout-library-1",
+  "version": 1,
+  "coordinate_units": 12000,
+  "canvas_ratio": "16:9",
+  "gates": {
+    "max_cell_area_ratio": 2.5,
+    "min_cell_area_fraction": 0.09,
+    "preview_width": 1600,
+    "min_photo_short_edge": 300
+  },
+  "templates": [
+    {
+      "id": "L2",
+      "version": 1,
+      "name": "全貌与尺度",
+      "panel_count": 2,
+      "slots": [
+        {
+          "id": "s1",
+          "role": "overall",
+          "tier": "primary",
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 6600,
+            "height": 12000
+          }
+        },
+        {
+          "id": "s2",
+          "role": "scale",
+          "tier": "secondary",
+          "rect": {
+            "x": 6600,
+            "y": 0,
+            "width": 5400,
+            "height": 12000
+          }
+        }
+      ]
+    },
+    {
+      "id": "L3",
+      "version": 1,
+      "name": "一个核心",
+      "panel_count": 3,
+      "slots": [
+        {
+          "id": "s1",
+          "role": "overall",
+          "tier": "primary",
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 6000,
+            "height": 12000
+          }
+        },
+        {
+          "id": "s2",
+          "role": "scale",
+          "tier": "secondary",
+          "rect": {
+            "x": 6000,
+            "y": 0,
+            "width": 6000,
+            "height": 6000
+          }
+        },
+        {
+          "id": "s3",
+          "role": "any",
+          "tier": "support",
+          "rect": {
+            "x": 6000,
+            "y": 6000,
+            "width": 6000,
+            "height": 6000
+          }
+        }
+      ]
+    },
+    {
+      "id": "L4",
+      "version": 1,
+      "name": "均衡主辅",
+      "panel_count": 4,
+      "slots": [
+        {
+          "id": "s1",
+          "role": "overall",
+          "tier": "primary",
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 6600,
+            "height": 6600
+          }
+        },
+        {
+          "id": "s2",
+          "role": "scale",
+          "tier": "secondary",
+          "rect": {
+            "x": 6600,
+            "y": 0,
+            "width": 5400,
+            "height": 6600
+          }
+        },
+        {
+          "id": "s3",
+          "role": "any",
+          "tier": "support",
+          "rect": {
+            "x": 0,
+            "y": 6600,
+            "width": 6600,
+            "height": 5400
+          }
+        },
+        {
+          "id": "s4",
+          "role": "any",
+          "tier": "support",
+          "rect": {
+            "x": 6600,
+            "y": 6600,
+            "width": 5400,
+            "height": 5400
+          }
+        }
+      ]
+    },
+    {
+      "id": "L5A",
+      "version": 1,
+      "name": "上二下三",
+      "panel_count": 5,
+      "slots": [
+        {
+          "id": "s1",
+          "role": "overall",
+          "tier": "primary",
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 6600,
+            "height": 6600
+          }
+        },
+        {
+          "id": "s2",
+          "role": "scale",
+          "tier": "secondary",
+          "rect": {
+            "x": 6600,
+            "y": 0,
+            "width": 5400,
+            "height": 6600
+          }
+        },
+        {
+          "id": "s3",
+          "role": "any",
+          "tier": "support",
+          "rect": {
+            "x": 0,
+            "y": 6600,
+            "width": 4000,
+            "height": 5400
+          }
+        },
+        {
+          "id": "s4",
+          "role": "any",
+          "tier": "support",
+          "rect": {
+            "x": 4000,
+            "y": 6600,
+            "width": 4000,
+            "height": 5400
+          }
+        },
+        {
+          "id": "s5",
+          "role": "any",
+          "tier": "support",
+          "rect": {
+            "x": 8000,
+            "y": 6600,
+            "width": 4000,
+            "height": 5400
+          }
+        }
+      ]
+    },
+    {
+      "id": "L5B",
+      "version": 1,
+      "name": "左主右四",
+      "panel_count": 5,
+      "slots": [
+        {
+          "id": "s1",
+          "role": "overall",
+          "tier": "primary",
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 4000,
+            "height": 12000
+          }
+        },
+        {
+          "id": "s2",
+          "role": "scale",
+          "tier": "secondary",
+          "rect": {
+            "x": 4000,
+            "y": 0,
+            "width": 4000,
+            "height": 6000
+          }
+        },
+        {
+          "id": "s3",
+          "role": "any",
+          "tier": "support",
+          "rect": {
+            "x": 8000,
+            "y": 0,
+            "width": 4000,
+            "height": 6000
+          }
+        },
+        {
+          "id": "s4",
+          "role": "any",
+          "tier": "support",
+          "rect": {
+            "x": 4000,
+            "y": 6000,
+            "width": 4000,
+            "height": 6000
+          }
+        },
+        {
+          "id": "s5",
+          "role": "any",
+          "tier": "support",
+          "rect": {
+            "x": 8000,
+            "y": 6000,
+            "width": 4000,
+            "height": 6000
+          }
+        }
+      ]
+    },
+    {
+      "id": "L6",
+      "version": 1,
+      "name": "上二下四",
+      "panel_count": 6,
+      "slots": [
+        {
+          "id": "s1",
+          "role": "overall",
+          "tier": "primary",
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 6600,
+            "height": 5400
+          }
+        },
+        {
+          "id": "s2",
+          "role": "scale",
+          "tier": "secondary",
+          "rect": {
+            "x": 6600,
+            "y": 0,
+            "width": 5400,
+            "height": 5400
+          }
+        },
+        {
+          "id": "s3",
+          "role": "any",
+          "tier": "support",
+          "rect": {
+            "x": 0,
+            "y": 5400,
+            "width": 3000,
+            "height": 6600
+          }
+        },
+        {
+          "id": "s4",
+          "role": "any",
+          "tier": "support",
+          "rect": {
+            "x": 3000,
+            "y": 5400,
+            "width": 3000,
+            "height": 6600
+          }
+        },
+        {
+          "id": "s5",
+          "role": "any",
+          "tier": "support",
+          "rect": {
+            "x": 6000,
+            "y": 5400,
+            "width": 3000,
+            "height": 6600
+          }
+        },
+        {
+          "id": "s6",
+          "role": "any",
+          "tier": "support",
+          "rect": {
+            "x": 9000,
+            "y": 5400,
+            "width": 3000,
+            "height": 6600
+          }
+        }
+      ]
+    },
+    {
+      "id": "L7",
+      "version": 1,
+      "name": "上三下四",
+      "panel_count": 7,
+      "slots": [
+        {
+          "id": "s1",
+          "role": "overall",
+          "tier": "primary",
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 4800,
+            "height": 6600
+          }
+        },
+        {
+          "id": "s2",
+          "role": "scale",
+          "tier": "secondary",
+          "rect": {
+            "x": 4800,
+            "y": 0,
+            "width": 3600,
+            "height": 6600
+          }
+        },
+        {
+          "id": "s3",
+          "role": "any",
+          "tier": "secondary",
+          "rect": {
+            "x": 8400,
+            "y": 0,
+            "width": 3600,
+            "height": 6600
+          }
+        },
+        {
+          "id": "s4",
+          "role": "any",
+          "tier": "support",
+          "rect": {
+            "x": 0,
+            "y": 6600,
+            "width": 3000,
+            "height": 5400
+          }
+        },
+        {
+          "id": "s5",
+          "role": "any",
+          "tier": "support",
+          "rect": {
+            "x": 3000,
+            "y": 6600,
+            "width": 3000,
+            "height": 5400
+          }
+        },
+        {
+          "id": "s6",
+          "role": "any",
+          "tier": "support",
+          "rect": {
+            "x": 6000,
+            "y": 6600,
+            "width": 3000,
+            "height": 5400
+          }
+        },
+        {
+          "id": "s7",
+          "role": "any",
+          "tier": "support",
+          "rect": {
+            "x": 9000,
+            "y": 6600,
+            "width": 3000,
+            "height": 5400
+          }
+        }
+      ]
+    },
+    {
+      "id": "L8",
+      "version": 1,
+      "name": "上三下五",
+      "panel_count": 8,
+      "slots": [
+        {
+          "id": "s1",
+          "role": "overall",
+          "tier": "primary",
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 4800,
+            "height": 6600
+          }
+        },
+        {
+          "id": "s2",
+          "role": "scale",
+          "tier": "secondary",
+          "rect": {
+            "x": 4800,
+            "y": 0,
+            "width": 3600,
+            "height": 6600
+          }
+        },
+        {
+          "id": "s3",
+          "role": "any",
+          "tier": "secondary",
+          "rect": {
+            "x": 8400,
+            "y": 0,
+            "width": 3600,
+            "height": 6600
+          }
+        },
+        {
+          "id": "s4",
+          "role": "any",
+          "tier": "support",
+          "rect": {
+            "x": 0,
+            "y": 6600,
+            "width": 2400,
+            "height": 5400
+          }
+        },
+        {
+          "id": "s5",
+          "role": "any",
+          "tier": "support",
+          "rect": {
+            "x": 2400,
+            "y": 6600,
+            "width": 2400,
+            "height": 5400
+          }
+        },
+        {
+          "id": "s6",
+          "role": "any",
+          "tier": "support",
+          "rect": {
+            "x": 4800,
+            "y": 6600,
+            "width": 2400,
+            "height": 5400
+          }
+        },
+        {
+          "id": "s7",
+          "role": "any",
+          "tier": "support",
+          "rect": {
+            "x": 7200,
+            "y": 6600,
+            "width": 2400,
+            "height": 5400
+          }
+        },
+        {
+          "id": "s8",
+          "role": "any",
+          "tier": "support",
+          "rect": {
+            "x": 9600,
+            "y": 6600,
+            "width": 2400,
+            "height": 5400
+          }
+        }
+      ]
+    }
+  ]
+}

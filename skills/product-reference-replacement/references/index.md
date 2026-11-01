@@ -17,3 +17,5 @@
 - [原始照片参考准备](topics/reference-preparation.md)：A1选择主素材及比例时区分页面装饰、核对裁切和必要证据。
 
 - A1准备与复用：[合批准备](topics/batch-preparation.md)，只在A1加载；A2的执行与整板定稿保持按需读取。
+
+- A1确定图片数量后：[固定布局库](layouts/README.md)，按格数与构图选模板，返回计划预检。
