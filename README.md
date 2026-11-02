@@ -47,3 +47,5 @@
 开发/运行合同：准备阶段通过reference batch-prepare/batch-review直接消费模板；模式A通过panel batch-prepare/batch-run/batch-review保留每格独立task和验收，未知提交只恢复原任务。当前阶段的依赖、原图检查和机械回执复用；验收输入使用外部工作目录，内部review.json由CLI维护。安装与源码修复本身不授权付费测试或替换运行中的环境。
 
 模式A按用户与宿主选择支持原生imagegen或SealSeek。新任务先锁定模板计划，原件绑定请求并逐格验收后统一合成；职责调整保留版本，只重做受影响格。
+
+运行时安装使用当前宿主提供的受管 Node 和 npm CLI；Windows 以参数数组直接调用 npm JavaScript 入口，保留含空格与中文的路径。宿主可通过标准 npm_execpath 提供 npm-cli.js，独立 Node 安装也可自动定位相邻 npm。
